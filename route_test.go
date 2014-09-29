@@ -5,6 +5,7 @@ package rest
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -285,4 +286,82 @@ func TestRouteInvokeError(t *testing.T) {
 	hErr2 := func() (error, int) { return fmt.Errorf("BOOM"), 0 }
 	rErr2 := checkRoute(t, hErr2, "err/2", f("err"), f("2"))
 	failInvoke(t, rErr2, HandlerError, "")
+}
+
+func BenchRouteInvoke(b *testing.B, route *Route, args map[int]string, body []byte) {
+	if args == nil {
+		args = make(map[int]string)
+	}
+
+	if _, _, err := route.invoke(args, body); err != nil {
+		panic("failed bench")
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		route.invoke(args, body)
+	}
+}
+
+func BenchmarkRouteInvokeNoop(b *testing.B) {
+	BenchRouteInvoke(b, NewRoute("POST", "", func() {}), nil, nil)
+}
+
+func BenchmarkRouteInvoke1Arg(b *testing.B) {
+	args := map[int]string{0: "10"}
+	route := NewRoute("POST", "{0}", func(int) {})
+
+	BenchRouteInvoke(b, route, args, nil)
+}
+
+func BenchmarkRouteInvoke8Arg(b *testing.B) {
+	path := "/"
+	args := make(map[int]string)
+	for i := 0; i < 8; i++ {
+		args[i] = strconv.Itoa(i)
+		path += fmt.Sprintf("{%d}/", i)
+	}
+
+	route := NewRoute("POST", path, func(a, b, c, d, e, f, g, h int) {})
+
+	BenchRouteInvoke(b, route, args, nil)
+}
+
+func BenchmarkRouteInvokeBody(b *testing.B) {
+	route := NewRoute("POST", "", func(a int) {})
+	body := []byte("10")
+
+	BenchRouteInvoke(b, route, nil, body)
+}
+
+func BenchmarkRouteInvokeRet(b *testing.B) {
+	route := NewRoute("POST", "", func() int { return 10 })
+
+	BenchRouteInvoke(b, route, nil, nil)
+}
+
+func BenchmarkRouteInvokeRetErr(b *testing.B) {
+	route := NewRoute("POST", "", func() error { return nil })
+
+	BenchRouteInvoke(b, route, nil, nil)
+}
+
+func BenchmarkRouteInvokeRetBoth(b *testing.B) {
+	route := NewRoute("POST", "", func() (int, error) { return 10, nil })
+
+	BenchRouteInvoke(b, route, nil, nil)
+}
+
+func BenchmarkRouteInvokeAll(b *testing.B) {
+	path := "/"
+	args := make(map[int]string)
+	for i := 0; i < 7; i++ {
+		args[i] = strconv.Itoa(i)
+		path += fmt.Sprintf("{%d}/", i)
+	}
+	body := []byte("10")
+
+	route := NewRoute("POST", path, func(a, b, c, d, e, f, g, h int) (int, error) { return 0, nil })
+
+	BenchRouteInvoke(b, route, args, body)
 }

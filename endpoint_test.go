@@ -140,8 +140,9 @@ func (service *TestService) Expect(t *testing.T, title string, exp ...KV) {
 	}
 }
 
-func NewEndpoint(root string, routes ...interface{}) *TestEndpoint {
-	endpoint := &TestEndpoint{Endpoint: Endpoint{Root: root, Routes: routes}}
+func NewEndpoint(root string, routes ...Routable) *TestEndpoint {
+	endpoint := &TestEndpoint{Endpoint: Endpoint{Root: root}}
+	endpoint.AddRoutable(routes...)
 	endpoint.ListenAndServe()
 	return endpoint
 }

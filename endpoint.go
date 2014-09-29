@@ -25,11 +25,6 @@ type Endpoint struct {
 	// afterwards.
 	Root string
 
-	// Routes static set of Route or Routable objects to be managed by this
-	// endpoint. Any other types will lead to a panic. Must be set before
-	// calling Init and can't be changed afterwards.
-	Routes []interface{}
-
 	// ErrorFunc is called for all errors that passes through this endpoint. The
 	// returned value will overwrite the current error and will be returned to
 	// the client instead.. If it's return value is a rest.CodedError then the
@@ -56,28 +51,22 @@ func (endpoint *Endpoint) init() {
 	if endpoint.Server == nil {
 		endpoint.Server = &http.Server{}
 	}
-
-	endpoint.add(endpoint.Routes...)
 }
 
-// Add adds the given Route or Routable objects to the endpoint. Any other types
-// will result in a panic. Must be called before starting the endpoint.
-func (endpoint *Endpoint) Add(routes ...interface{}) {
+// AddRoute adds all the given routes to the endpoint.
+func (endpoint *Endpoint) AddRoute(routes ...*Route) {
 	endpoint.Init()
-	endpoint.add(routes...)
+
+	for _, route := range routes {
+		endpoint.router.Add(route)
+	}
 }
 
-func (endpoint *Endpoint) add(routes ...interface{}) {
-	for _, route := range routes {
-
-		if routable, ok := route.(Routable); ok {
-			for _, r := range routable.RESTRoutes() {
-				endpoint.router.Add(r)
-			}
-
-		} else {
-			endpoint.router.Add(route.(*Route))
-		}
+// AddRoutable adds all the routes returned by the Routable objects to the
+// endpoint.
+func (endpoint *Endpoint) AddRoutable(routables ...Routable) {
+	for _, routable := range routables {
+		endpoint.AddRoute(routable.RESTRoutes()...)
 	}
 }
 

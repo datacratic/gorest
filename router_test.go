@@ -114,3 +114,80 @@ func TestRouter(t *testing.T) {
 	checkRouter(t, rt, "PUT", "/b/c", nil)
 	checkRouter(t, rt, "DELETE", "/a/b/c", nil)
 }
+
+func BenchRouter(b *testing.B, path string) {
+	h0 := func() {}
+	h1 := func(a int) {}
+	h2 := func(a, b int) {}
+	h3 := func(a, b, c int) {}
+
+	rt := &router{}
+
+	rt.Add(NewRoute("POST", "/", h0))
+	rt.Add(NewRoute("POST", "/a", h0))
+	rt.Add(NewRoute("POST", "/c", h0))
+	rt.Add(NewRoute("POST", "/a/b", h0))
+	rt.Add(NewRoute("POST", "/b/c", h0))
+	rt.Add(NewRoute("POST", "/a/b/c", h0))
+	rt.Add(NewRoute("PUT", "/a/b/c", h0))
+
+	rt.Add(NewRoute("POST", "/{0:a}/b/c", h1))
+	rt.Add(NewRoute("POST", "/a/{0:b}/c", h1))
+	rt.Add(NewRoute("POST", "/a/b/{0:c}", h1))
+	rt.Add(NewRoute("POST", "/{0:a}/b", h1))
+	rt.Add(NewRoute("POST", "/b/{1:a}", h2))
+	rt.Add(NewRoute("POST", "/{0:a}", h1))
+
+	rt.Add(NewRoute("POST", "/{0:a}/{1:b}/c", h2))
+	rt.Add(NewRoute("POST", "/{1:a}/{0:b}", h2))
+	rt.Add(NewRoute("POST", "/{0:a}/b/{1:c}", h2))
+	rt.Add(NewRoute("POST", "/a/{1:b}/{0:c}", h2))
+
+	rt.Add(NewRoute("POST", "/{0:a}/{1:b}/{2:c}", h3))
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		rt.Route("POST", path)
+	}
+}
+
+func BenchmarkRouterRoot(b *testing.B) {
+	BenchRouter(b, "")
+}
+
+func BenchmarkRouter1Fix(b *testing.B) {
+	BenchRouter(b, "/a")
+}
+
+func BenchmarkRouter2Fix(b *testing.B) {
+	BenchRouter(b, "/a/b")
+}
+
+func BenchmarkRouter3Fix(b *testing.B) {
+	BenchRouter(b, "/a/b/c")
+}
+
+func BenchmarkRouter1Var(b *testing.B) {
+	BenchRouter(b, "/1/b/c")
+}
+
+func BenchmarkRouter2Var(b *testing.B) {
+	BenchRouter(b, "/1/2/c")
+}
+
+func BenchmarkRouter3Var(b *testing.B) {
+	BenchRouter(b, "/1/2/3")
+}
+
+func BenchmarkRouterUnknownShallow(b *testing.B) {
+	BenchRouter(b, "/d")
+}
+
+func BenchmarkRouterUnknownDeep(b *testing.B) {
+	BenchRouter(b, "/a/b/c/d")
+}
+
+func BenchmarkRouterUnknownVariable(b *testing.B) {
+	BenchRouter(b, "/1/2/3/4")
+}
