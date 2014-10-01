@@ -31,7 +31,7 @@ func (svc *PingService) RESTRoutes() rest.Routes {
 		// Path arguments are assumed to be basic types (string, bool, int
 		// floats) and are automatically converted to match the function
 		// argument.
-		rest.NewRoute("PUT", "/ping/{0:tick}", svc.Ping),
+		rest.NewRoute("PUT", "/ping/:tick", svc.Ping),
 
 		// We can also return errors which will automatically be detected and
 		// converted to a HTTP 400 return code to the user. The HTTP return code

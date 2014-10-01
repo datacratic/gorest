@@ -9,7 +9,7 @@ import (
 type router struct {
 	routes   map[string]*Route
 	fixed    map[string]*router
-	variable map[int]*router
+	variable *router
 }
 
 func (rt *router) Add(route *Route) *Route {
@@ -35,15 +35,11 @@ func (rt *router) add(path Path, route *Route) {
 	var ok bool
 	var next *router
 
-	if path[0].IsPositional() {
+	if path[0].IsArg {
 		if rt.variable == nil {
-			rt.variable = make(map[int]*router)
+			rt.variable = new(router)
 		}
-
-		if next, ok = rt.variable[path[0].Pos]; !ok {
-			next = new(router)
-			rt.variable[path[0].Pos] = next
-		}
+		next = rt.variable
 
 	} else {
 		if rt.fixed == nil {
@@ -59,20 +55,19 @@ func (rt *router) add(path Path, route *Route) {
 	next.add(path[1:], route)
 }
 
-func (rt *router) Route(method, path string) (*Route, map[int]string) {
-	var args map[int]string
-	route := rt.route(method, splitPath(path), &args)
-	return route, args
+func (rt *router) Route(method, path string) (*Route, []string) {
+	var args []string
+	return rt.route(method, SplitPath(path), args)
 }
 
-func (rt *router) route(method string, path []string, args *map[int]string) *Route {
+func (rt *router) route(method string, path []string, args []string) (*Route, []string) {
 	if len(path) == 0 {
 		if rt.routes != nil {
 			if route, ok := rt.routes[method]; ok {
-				return route
+				return route, args
 			}
 		}
-		return nil
+		return nil, args
 	}
 
 	if rt.fixed != nil {
@@ -82,18 +77,9 @@ func (rt *router) route(method string, path []string, args *map[int]string) *Rou
 	}
 
 	if rt.variable != nil {
-		if *args == nil {
-			*args = make(map[int]string)
-		}
-
-		for pos, next := range rt.variable {
-			(*args)[pos] = path[0]
-			if route := next.route(method, path[1:], args); route != nil {
-				return route
-			}
-			delete(*args, pos)
-		}
+		args = append(args, path[0])
+		return rt.variable.route(method, path[1:], args)
 	}
 
-	return nil
+	return nil, args
 }

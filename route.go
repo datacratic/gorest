@@ -38,9 +38,8 @@ type Route struct {
 	// The function can only return at most 2 values where one will be an error
 	// object and the other will be the body of the HTTP response.
 	//
-	// The function can have N + 1 arguments where N is the number of positional
-	// parameters in Path and where the +1 is the argument that will filled from
-	// the body of the HTTP request.
+	// The function needs enough arguments to accept the Path arguments and,
+	// optionally, the body of the request.
 	//
 	// No restrictions are applied on the order of the arguments, return values
 	// so long as all the arguments can be filled in from a given HTTP request.
@@ -85,34 +84,19 @@ func (route *Route) init() {
 			route.Method, route.Path, route.handlerType.Kind(), reflect.Func))
 	}
 
-	args := make(map[int]struct{})
-	for i := 0; i < route.handlerType.NumIn(); i++ {
-		args[i] = struct{}{}
-	}
+	pathArgs := route.Path.NumArgs()
+	handlerArgs := route.handlerType.NumIn()
 
-	for _, item := range route.Path {
-		if !item.IsPositional() {
-			continue
-		}
+	if pathArgs < handlerArgs-1 {
+		panic(fmt.Sprintf("not enough path arguments for route { %s %s }: %d < %d",
+			route.Method, route.Path, pathArgs, handlerArgs-1))
 
-		if _, ok := args[item.Pos]; !ok {
-			panic(fmt.Sprintf(
-				"out of bound or duplicate positional argument for route { %s %s }: '%s' -> %d >= %d",
-				route.Method, route.Path, item, item.Pos, route.handlerType.NumIn()))
-		}
+	} else if pathArgs > handlerArgs {
+		panic(fmt.Sprintf("too many path arguments for route { %s %s }: %d > %d",
+			route.Method, route.Path, pathArgs, handlerArgs))
 
-		delete(args, item.Pos)
-	}
-
-	if len(args) > 1 {
-		panic(fmt.Sprintf("can only have one non-positional handler argument for route %s", route))
-	}
-
-	route.inBody = -1
-	if len(args) > 0 {
-		for pos := range args {
-			route.inBody = pos
-		}
+	} else if pathArgs < handlerArgs {
+		route.inBody = handlerArgs
 	}
 
 	if route.handlerType.NumOut() > 2 {
@@ -178,15 +162,15 @@ func (route *Route) parseArg(data string, value reflect.Value) (err error) {
 	return
 }
 
-func (route *Route) invoke(args map[int]string, body []byte) ([]byte, ErrorType, error) {
+func (route *Route) invoke(args []string, body []byte) ([]byte, ErrorType, error) {
 	var in []reflect.Value
 	for i := 0; i < route.handlerType.NumIn(); i++ {
 		arg := reflect.New(route.handlerType.In(i))
 
 		var err error
 
-		if data, ok := args[i]; ok {
-			err = route.parseArg(data, arg.Elem())
+		if i < len(args) {
+			err = route.parseArg(args[i], arg.Elem())
 		} else {
 			err = json.Unmarshal(body, arg.Interface())
 		}

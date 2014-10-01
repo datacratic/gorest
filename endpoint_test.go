@@ -35,9 +35,9 @@ func (service *TestService) init() {
 func (service *TestService) RESTRoutes() Routes {
 	return Routes{
 		NewRoute("POST", "/map", service.Post),
-		NewRoute("GET", "/map/{0:key}", service.Get),
-		NewRoute("PUT", "/map/{0:key}", service.Put),
-		NewRoute("DELETE", "/map/{0:key}", service.Del),
+		NewRoute("GET", "/map/:key", service.Get),
+		NewRoute("PUT", "/map/:key", service.Put),
+		NewRoute("DELETE", "/map/:key", service.Del),
 	}
 }
 
@@ -206,7 +206,7 @@ func TestEndpointSimple(t *testing.T) {
 	checkRespBody(t, "d(b)", r21, &KV{"b", "3"})
 
 	r22 := client.NewRequest("POST").SetPath("/blah/bleh").Send()
-	failResp(t, "p(blah)", r22, EndpointError, 404)
+	failResp(t, "p(blah)", r22, UnknownRoute, 404)
 
 	handler.Wait(2)
 	handler.Expect(t, "r2x", KV{"a", "1"})

@@ -100,7 +100,7 @@ func (req *Request) SetClient(client *http.Client) *Request {
 // SetPath formats and sets the path where the request will be routed to. Note
 // that the root is prefixed to the path before formatting the string.
 func (req *Request) SetPath(path string, args ...interface{}) *Request {
-	req.Path = fmt.Sprintf(joinPath(req.Root, path), args...)
+	req.Path = fmt.Sprintf(JoinPath(req.Root, path), args...)
 	return req
 }
 
@@ -222,6 +222,10 @@ func (resp *Response) GetBody(obj interface{}) (errT ErrorType, err error) {
 	if resp.Error != nil {
 		errT = resp.ErrorT
 		err = resp.Error
+
+	} else if resp.Code == http.StatusNotFound {
+		errT = UnknownRoute
+		err = errors.New(string(resp.Body))
 
 	} else if resp.Code >= 400 {
 		errT = EndpointError

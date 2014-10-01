@@ -4,29 +4,21 @@ package rest
 
 import (
 	"bytes"
-	"fmt"
-	"strconv"
 	"strings"
 )
 
-// PathItem represents a single item in a path which can either be a constant or
-// a positional argument. The name of a positional arguments is used for
-// documentation and the position is used to determine which argument of the
-// handler it represents.
+// PathItem represents a single item in a path which can either be an argument
+// or a constant. The name of an argument is used purely for documentation
+// purposes while the name of a constant is its value.
 type PathItem struct {
-	Name string
-	Pos  int
-}
-
-// IsPositional returns true if the item is a positional argument.
-func (item PathItem) IsPositional() bool {
-	return item.Pos >= 0
+	Name  string
+	IsArg bool
 }
 
 // String returns the string representation of the item.
 func (item PathItem) String() string {
-	if item.IsPositional() {
-		return fmt.Sprintf("{%d:%s}", item.Pos, item.Name)
+	if item.IsArg {
+		return ":" + item.Name
 	}
 	return item.Name
 }
@@ -35,65 +27,49 @@ func (item PathItem) String() string {
 // query.
 //
 // The format of a path is a series of item seperated by '/' characters. An item
-// can either a string literal or a positional argument which takes the
-// following form:
+// can either be a constant or an argument which starts with leading ':'
+// character. A full path examples looks like the following:
 //
-//     {%d:%s}
+//    /a/:b/c
 //
-// Where the integral component is the position and the string argument is the
-// description.
-//
-// A full path examples looks like the following:
-//
-//    /a/{0:b}/c
-//
+// Where a and c are both constants and b is an argument.
 type Path []PathItem
 
-func splitPath(path string) (split []string) {
+// SplitPath breaks a REST path into its components.
+func SplitPath(path string) (split []string) {
 	if trimmed := strings.Trim(path, "/"); len(trimmed) > 0 {
 		split = strings.Split(trimmed, "/")
 	}
 	return
 }
 
-func joinPath(a, b string) string {
+// JoinPath joins two partial paths into a single path.
+func JoinPath(a, b string) string {
 	return strings.TrimRight(a, "/") + "/" + strings.TrimLeft(b, "/")
 }
 
 // NewPath breaks up the given path into PathItem to form a new Path object. It
 // panics if it's unable to parse the path.
 func NewPath(rawPath string) (path Path) {
-	for _, item := range splitPath(rawPath) {
-		if item[0] != '{' {
-			if n := strings.IndexAny(item, "{}"); n >= 0 {
-				panic(fmt.Sprintf("invalid '{' or '}' char detected path '%s': %s", path, item))
-			}
-
-			path = append(path, PathItem{item, -1})
+	for _, item := range SplitPath(rawPath) {
+		if item[0] != ':' {
+			path = append(path, PathItem{item, false})
 			continue
-
 		}
 
-		item = item[1 : len(item)-1]
-
-		n := strings.Index(item, ":")
-		if n < 0 {
-			n = len(item)
-		}
-
-		pos, err := strconv.ParseUint(item[0:n], 10, 8)
-		if err != nil {
-			panic(fmt.Sprintf("unable to parse position: '%s' -> '%s'", item[0:n], err))
-		}
-
-		var name string
-		if n != len(item) {
-			name = item[n+1:]
-		}
-
-		path = append(path, PathItem{name, int(pos)})
+		path = append(path, PathItem{item[1:], true})
 	}
 
+	return
+}
+
+// NumArgs returns the number of items in the path where IsArg is true.
+func (path Path) NumArgs() (n int) {
+	for _, item := range path {
+		if item.IsArg {
+			n++
+		}
+	}
 	return
 }
 

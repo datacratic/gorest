@@ -113,11 +113,10 @@ func (endpoint *Endpoint) ListenAndServeTLS(certFile, keyFile string) {
 	}()
 }
 
-func (endpoint *Endpoint) route(method, path string) (*Route, map[int]string, error) {
+func (endpoint *Endpoint) route(method, path string) (*Route, []string, error) {
 	if strings.HasPrefix(path, endpoint.Root) {
 		sub := path[len(endpoint.Root):]
-		route, args := endpoint.router.Route(method, sub)
-		if route != nil {
+		if route, args := endpoint.router.Route(method, sub); route != nil {
 			return route, args, nil
 		}
 	}
