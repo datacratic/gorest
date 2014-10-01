@@ -60,7 +60,7 @@ func ExamplePing() {
 		SetBody(123).
 		Send()
 
-	if _, err := simpleResp.GetBody(&tick); err != nil {
+	if err := simpleResp.GetBody(&tick); err != nil {
 		panic("Whoops!")
 	}
 	fmt.Println("ping-simple:", tick)
@@ -70,7 +70,7 @@ func ExamplePing() {
 		SetPath("%d", 321).
 		Send()
 
-	if _, err := clientResp.GetBody(&tick); err != nil {
+	if err := clientResp.GetBody(&tick); err != nil {
 		panic("Whoops!")
 	}
 	fmt.Println("ping-client:", tick)

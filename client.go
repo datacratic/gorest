@@ -77,8 +77,9 @@ type Request struct {
 	// SetBody method.
 	Body []byte
 
-	err  error
-	errT ErrorType
+	HTTP *http.Request
+
+	err *Error
 }
 
 // NewRequest creates a new Request object to be sent to the given host using
@@ -117,12 +118,12 @@ func (req *Request) AddHeader(key, value string) *Request {
 // SetBody marshals the given objects and sets it as the body of the
 // request. The Content-Length header will be automatically set.
 func (req *Request) SetBody(obj interface{}) *Request {
-	req.Body, req.err = json.Marshal(obj)
-	if req.err == nil {
+	var err error
+	if req.Body, err = json.Marshal(obj); err == nil {
 		req.AddHeader("Content-Length", strconv.Itoa(len(req.Body)))
 
 	} else {
-		req.errT = MarshalError
+		req.err = &Error{MarshalError, err}
 	}
 
 	return req
@@ -137,21 +138,17 @@ func (req *Request) Send() *Response {
 		req.Path = req.Root
 	}
 
-	resp := new(Response)
-	req.send(resp)
+	resp := &Response{Request: req, Error: req.err}
+
+	if resp.Error == nil {
+		req.send(resp)
+	}
 
 	resp.Latency = time.Since(t0)
 	return resp
 }
 
 func (req *Request) send(resp *Response) {
-	resp.Request = req
-	if req.err != nil {
-		resp.Error = req.err
-		resp.ErrorT = req.errT
-		return
-	}
-
 	var reader io.Reader
 	if len(req.Body) > 0 {
 		reader = bytes.NewReader(req.Body)
@@ -159,29 +156,27 @@ func (req *Request) send(resp *Response) {
 
 	url := strings.TrimRight(req.Host, "/") + req.Path
 
-	var httpReq *http.Request
-	httpReq, resp.Error = http.NewRequest(req.Method, url, reader)
-	if resp.Error != nil {
-		resp.ErrorT = NewRequestError
+	var err error
+
+	if req.HTTP, err = http.NewRequest(req.Method, url, reader); err != nil {
+		resp.Error = &Error{NewRequestError, err}
 		return
 	}
 
 	req.AddHeader("Content-Type", "application/json")
-	httpReq.Header = req.Header
+	req.HTTP.Header = req.Header
 
-	httpResp, err := req.Client.Do(httpReq)
+	httpResp, err := req.Client.Do(req.HTTP)
 	if err != nil {
-		resp.Error = err
-		resp.ErrorT = SendRequestError
+		resp.Error = &Error{SendRequestError, err}
 		return
 	}
 
 	resp.Code = httpResp.StatusCode
 	resp.Header = httpResp.Header
-	resp.Body, resp.Error = ioutil.ReadAll(httpResp.Body)
 
-	if resp.Error != nil {
-		resp.ErrorT = ReadBodyError
+	if resp.Body, err = ioutil.ReadAll(httpResp.Body); err != nil {
+		resp.Error = &Error{ReadBodyError, err}
 	}
 
 	httpResp.Body.Close()
@@ -206,10 +201,7 @@ type Response struct {
 	Body []byte
 
 	// Error is set if an error occured while sending the request.
-	Error error
-
-	// ErrorT indicates the error type if Error is set.
-	ErrorT ErrorType
+	Error *Error
 
 	// Latency indicates how long the request round-trip took.
 	Latency time.Duration
@@ -218,36 +210,30 @@ type Response struct {
 // GetBody checks the various fields of the response for errors and unmarshals
 // the response body if the given object is not nil. If an error is detected,
 // the error type and error will be returned instead.
-func (resp *Response) GetBody(obj interface{}) (errT ErrorType, err error) {
+func (resp *Response) GetBody(obj interface{}) (err *Error) {
 	if resp.Error != nil {
-		errT = resp.ErrorT
 		err = resp.Error
 
 	} else if resp.Code == http.StatusNotFound {
-		errT = UnknownRoute
-		err = errors.New(string(resp.Body))
+		err = &Error{UnknownRoute, errors.New(string(resp.Body))}
 
 	} else if resp.Code >= 400 {
-		errT = EndpointError
-		err = errors.New(string(resp.Body))
+		err = &Error{EndpointError, errors.New(string(resp.Body))}
 
 	} else if resp.Code < 200 && resp.Code >= 300 {
-		errT = UnexpectedStatusCode
-		err = fmt.Errorf("unexpected status code: %d", resp.Code)
+		err = ErrorFmt(UnexpectedStatusCode, "unexpected status code: %d", resp.Code)
 
 	} else if resp.Code == http.StatusNoContent {
 		if obj == nil {
 			return
 		}
-		errT = UnexpectedStatusCode
-		err = fmt.Errorf("unexpected status code: 204")
+		err = ErrorFmt(UnexpectedStatusCode, "unexpected status code: 204")
 
 	} else if contentType := resp.Header.Get("Content-Type"); contentType != "application/json" {
-		errT = UnsupportedContentType
-		err = fmt.Errorf("unsupported content-type: '%s' != 'application/json'", contentType)
+		err = ErrorFmt(UnsupportedContentType, "unsupported content-type: '%s' != 'application/json'", contentType)
 
-	} else if err = json.Unmarshal(resp.Body, obj); err != nil {
-		errT = UnmarshalError
+	} else if jsonErr := json.Unmarshal(resp.Body, obj); err != nil {
+		err = &Error{UnmarshalError, jsonErr}
 	}
 
 	return

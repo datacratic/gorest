@@ -116,11 +116,10 @@ func checkInvoke(t *testing.T, route *Route, exp string, body string, args ...Pa
 		m = append(m, arg.Name)
 	}
 
-	ret, errT, err := route.invoke(m, []byte(body))
-
+	ret, err := route.invoke(m, []byte(body))
 	if err != nil {
-		t.Errorf("FAIL%s: unexpected error '%s','%s' -> %d:%s",
-			route, body, printPath(args...), errT, err)
+		t.Errorf("FAIL%s: unexpected error '%s','%s' -> %s:%s",
+			route, body, printPath(args...), err.Type, err.Sub)
 		return
 	}
 
@@ -137,7 +136,7 @@ func failInvoke(t *testing.T, route *Route, exp ErrorType, body string, args ...
 		m = append(m, arg.Name)
 	}
 
-	ret, errT, err := route.invoke(m, []byte(body))
+	ret, err := route.invoke(m, []byte(body))
 
 	if err == nil {
 		t.Errorf("FAIL%s: unexpected return '%s','%s' -> %s",
@@ -145,9 +144,9 @@ func failInvoke(t *testing.T, route *Route, exp ErrorType, body string, args ...
 		return
 	}
 
-	if errT != exp {
-		t.Errorf("FAIL%s: unexpected error type '%s','%s' -> %d != %d",
-			route, body, printPath(args...), errT, exp)
+	if err.Type != exp {
+		t.Errorf("FAIL%s: unexpected error type '%s','%s' -> %s != %s",
+			route, body, printPath(args...), err.Type, exp)
 		return
 	}
 }
@@ -285,7 +284,7 @@ func TestRouteInvokeError(t *testing.T) {
 }
 
 func BenchRouteInvoke(b *testing.B, route *Route, args []string, body []byte) {
-	if _, _, err := route.invoke(args, body); err != nil {
+	if _, err := route.invoke(args, body); err != nil {
 		panic("failed bench")
 	}
 

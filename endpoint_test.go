@@ -148,7 +148,7 @@ func NewEndpoint(root string, routes ...Routable) *TestEndpoint {
 }
 
 func checkResp(t *testing.T, title string, resp *Response) {
-	if _, err := resp.GetBody(nil); err != nil {
+	if err := resp.GetBody(nil); err != nil {
 		t.Errorf("FAIL(%s): error %s", title, err)
 	}
 }
@@ -156,7 +156,7 @@ func checkResp(t *testing.T, title string, resp *Response) {
 func checkRespBody(t *testing.T, title string, resp *Response, exp *KV) {
 	var kv KV
 
-	if _, err := resp.GetBody(&kv); err != nil {
+	if err := resp.GetBody(&kv); err != nil {
 		t.Errorf("FAIL(%s): error %s", title, err)
 
 	} else if kv.Key != exp.Key || kv.Val != exp.Val {
@@ -170,8 +170,8 @@ func failResp(t *testing.T, title string, resp *Response, exp ErrorType, code in
 		t.Errorf("FAIL(%s): unexpected code: %d != %d", title, resp.Code, code)
 	}
 
-	if errT, err := resp.GetBody(nil); errT != exp {
-		t.Errorf("FAIL(%s): unexpected error %d != %d:%v", title, exp, errT, err)
+	if err := resp.GetBody(nil); err.Type != exp {
+		t.Errorf("FAIL(%s): unexpected error %s != %s:%v", title, exp, err.Type, err.Sub)
 	}
 }
 

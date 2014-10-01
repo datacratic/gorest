@@ -129,9 +129,9 @@ func (endpoint *Endpoint) respondError(writer http.ResponseWriter, errType Error
 		err = endpoint.ErrorFunc(errType, err)
 	}
 
-	if coded, ok := err.(CodedError); ok {
+	if coded, ok := err.(*CodedError); ok {
 		code = coded.Code
-		err = coded.Err
+		err = coded.Sub
 	}
 
 	http.Error(writer, err.Error(), code)
@@ -161,9 +161,9 @@ func (endpoint *Endpoint) ServeHTTP(writer http.ResponseWriter, httpReq *http.Re
 		return
 	}
 
-	resp, errType, err := route.invoke(args, body)
-	if err != nil {
-		endpoint.respondError(writer, errType, http.StatusBadRequest, err)
+	resp, restError := route.invoke(args, body)
+	if restError != nil {
+		endpoint.respondError(writer, restError.Type, http.StatusBadRequest, restError.Sub)
 		return
 	}
 

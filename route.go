@@ -162,12 +162,12 @@ func (route *Route) parseArg(data string, value reflect.Value) (err error) {
 	return
 }
 
-func (route *Route) invoke(args []string, body []byte) ([]byte, ErrorType, error) {
+func (route *Route) invoke(args []string, body []byte) ([]byte, *Error) {
+	var err error
 	var in []reflect.Value
+
 	for i := 0; i < route.handlerType.NumIn(); i++ {
 		arg := reflect.New(route.handlerType.In(i))
-
-		var err error
 
 		if i < len(args) {
 			err = route.parseArg(args[i], arg.Elem())
@@ -176,7 +176,7 @@ func (route *Route) invoke(args []string, body []byte) ([]byte, ErrorType, error
 		}
 
 		if err != nil {
-			return nil, UnmarshalError, err
+			return nil, &Error{UnmarshalError, err}
 		}
 
 		in = append(in, arg.Elem())
@@ -185,20 +185,19 @@ func (route *Route) invoke(args []string, body []byte) ([]byte, ErrorType, error
 	out := route.handler.Call(in)
 
 	if route.outError >= 0 && !out[route.outError].IsNil() {
-		return nil, HandlerError, out[route.outError].Interface().(error)
+		err := out[route.outError].Interface().(error)
+		return nil, &Error{HandlerError, err}
 	}
 
 	var ret []byte
 
 	if route.outBody >= 0 {
-		var err error
-		ret, err = json.Marshal(out[route.outBody].Interface())
-		if err != nil {
-			return nil, MarshalError, err
+		if ret, err = json.Marshal(out[route.outBody].Interface()); err != nil {
+			return nil, &Error{MarshalError, err}
 		}
 	}
 
-	return ret, NoError, nil
+	return ret, nil
 }
 
 // String returns a string represenation of the object suitable for debugging.
