@@ -5,6 +5,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"sync"
@@ -80,27 +81,27 @@ func (route *Route) init() {
 	route.handlerType = route.handler.Type()
 
 	if route.handlerType.Kind() != reflect.Func {
-		panic(fmt.Sprintf("invalid handler type for route { %s %s }: got '%s' expected '%s'",
-			route.Method, route.Path, route.handlerType.Kind(), reflect.Func))
+		log.Panicf("invalid handler type for route { %s %s }: got '%s' expected '%s'",
+			route.Method, route.Path, route.handlerType.Kind(), reflect.Func)
 	}
 
 	pathArgs := route.Path.NumArgs()
 	handlerArgs := route.handlerType.NumIn()
 
 	if pathArgs < handlerArgs-1 {
-		panic(fmt.Sprintf("not enough path arguments for route { %s %s }: %d < %d",
-			route.Method, route.Path, pathArgs, handlerArgs-1))
+		log.Panicf("not enough path arguments for route { %s %s }: %d < %d",
+			route.Method, route.Path, pathArgs, handlerArgs-1)
 
 	} else if pathArgs > handlerArgs {
-		panic(fmt.Sprintf("too many path arguments for route { %s %s }: %d > %d",
-			route.Method, route.Path, pathArgs, handlerArgs))
+		log.Panicf("too many path arguments for route { %s %s }: %d > %d",
+			route.Method, route.Path, pathArgs, handlerArgs)
 
 	} else if pathArgs < handlerArgs {
 		route.inBody = handlerArgs
 	}
 
 	if route.handlerType.NumOut() > 2 {
-		panic(fmt.Sprintf("too many return arguments for route %s", route))
+		log.Panicf("too many return arguments for route %s", route)
 	}
 
 	route.outBody = -1
@@ -111,13 +112,13 @@ func (route *Route) init() {
 
 		if out := route.handlerType.Out(i); out == errorType {
 			if route.outError >= 0 {
-				panic(fmt.Sprintf("too many error return for route %s", route))
+				log.Panicf("too many error return for route %s", route)
 			}
 			route.outError = i
 
 		} else {
 			if route.outBody >= 0 {
-				panic(fmt.Sprintf("too many normal return for route %s", route))
+				log.Panicf("too many normal return for route %s", route)
 			}
 			route.outBody = i
 		}

@@ -3,7 +3,7 @@
 package rest
 
 import (
-	"fmt"
+	"log"
 )
 
 type router struct {
@@ -25,7 +25,7 @@ func (rt *router) add(path Path, route *Route) {
 		}
 
 		if _, ok := rt.routes[route.Method]; ok {
-			panic(fmt.Sprintf("duplicate route: %s", route.Path))
+			log.Panicf("duplicate route: %s", route.Path)
 		}
 
 		rt.routes[route.Method] = route

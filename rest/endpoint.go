@@ -5,6 +5,7 @@ package rest
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -74,7 +75,7 @@ func (endpoint *Endpoint) initServer() {
 	endpoint.Init()
 
 	if endpoint.Handler != nil {
-		panic("Handler must be nil")
+		log.Panicf("Handler must be nil")
 	}
 
 	endpoint.Handler = endpoint
@@ -86,7 +87,7 @@ func (endpoint *Endpoint) Serve(listener net.Listener) {
 	endpoint.initServer()
 	go func() {
 		if err := endpoint.Server.Serve(listener); err != nil {
-			panic(err.Error())
+			log.Panic(err.Error())
 		}
 	}()
 }
@@ -97,7 +98,7 @@ func (endpoint *Endpoint) ListenAndServe() {
 	endpoint.initServer()
 	go func() {
 		if err := endpoint.Server.ListenAndServe(); err != nil {
-			panic(err.Error())
+			log.Panic(err.Error())
 		}
 	}()
 }
@@ -108,7 +109,7 @@ func (endpoint *Endpoint) ListenAndServeTLS(certFile, keyFile string) {
 	endpoint.initServer()
 	go func() {
 		if err := endpoint.Server.ListenAndServeTLS(certFile, keyFile); err != nil {
-			panic(err.Error())
+			log.Panic(err.Error())
 		}
 	}()
 }
@@ -217,10 +218,12 @@ func (endpoint *TestEndpoint) ListenAndServe() (err error) {
 
 // Serve is not supported on this endpoint and will panic if called.
 func (endpoint *TestEndpoint) Serve(listener net.Listener) error {
-	panic("unsupported")
+	log.Panic("unsupported")
+	return nil
 }
 
 // ListenAndServeTLS is not supported on this endpoint and will panic if called.
 func (endpoint *TestEndpoint) ListenAndServeTLS(certFile, keyFile string) error {
-	panic("unsupported")
+	log.Panic("unsupported")
+	return nil
 }
