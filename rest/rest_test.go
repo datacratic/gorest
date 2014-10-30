@@ -3,7 +3,7 @@
 package rest_test
 
 import (
-	"github.com/datacratic/gortbkit/deps/gorest/rest"
+	"github.com/datacratic/gorest/rest"
 
 	"errors"
 	"fmt"
