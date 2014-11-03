@@ -15,7 +15,7 @@ build: fmt
 
 vet: build
 	@echo -- static analysis
-	@go vet ./...
+	@go tool vet --composites=false ./rest/*.go
 .PHONY: vet
 
 lint: vet
