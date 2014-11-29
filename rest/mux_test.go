@@ -169,13 +169,13 @@ func failResp(t *testing.T, title string, resp *Response, exp ErrorType, code in
 	}
 }
 
-func TestEndpointSimple(t *testing.T) {
+func TestMuxSimple(t *testing.T) {
 	handler := &TestService{}
 
-	endpoint := new(Endpoint)
-	endpoint.AddService(handler)
+	mux := new(Mux)
+	mux.AddService(handler)
 
-	server := httptest.NewServer(endpoint)
+	server := httptest.NewServer(mux)
 	defer server.Close()
 
 	client := &Client{Host: server.URL, Root: "/map/"}
