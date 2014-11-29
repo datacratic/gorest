@@ -139,8 +139,8 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 
 var DefaultMux = new(Mux)
 
-func AddRoute(method, path string, handler interface{}) {
-	DefaultMux.AddRoute(NewRoute(method, path, handler))
+func AddRoute(path, method string, handler interface{}) {
+	DefaultMux.AddRoute(NewRoute(path, method, handler))
 }
 
 func AddService(routable Routable) {

@@ -26,12 +26,12 @@ type Routes []*Route
 // and templated path.
 type Route struct {
 
-	// Method represents the HTTP verb required by this route.
-	Method string
-
 	// Path is the templated path required by this route. See Handler for the
 	// rules related to path.
 	Path Path
+
+	// Method represents the HTTP verb required by this route.
+	Method string
 
 	// Handler is a function to be invoked whenever for a given HTTP method and
 	// templated path.
@@ -61,10 +61,10 @@ type Route struct {
 
 // NewRoute creates and initializes a new Route from the method, path and
 // handler.
-func NewRoute(method, path string, handler interface{}) *Route {
+func NewRoute(path, method string, handler interface{}) *Route {
 	route := &Route{
-		Method:  method,
 		Path:    NewPath(path),
+		Method:  method,
 		Handler: handler,
 	}
 	route.Init()

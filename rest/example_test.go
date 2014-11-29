@@ -29,7 +29,7 @@ func (svc *PingService) RESTRoutes() rest.Routes {
 		// using the encoding.json package and used as the body of the HTTP
 		// response sent to the client. If nothing or nil is returned then an
 		// HTTP 204 response code is returned instead.
-		rest.NewRoute("POST", "/ping", svc.Ping),
+		rest.NewRoute("/ping", "POST", svc.Ping),
 
 		// Path components starting with ':' indicates that the first argument
 		// of the Ping function will be fed from the value found where the
@@ -38,7 +38,7 @@ func (svc *PingService) RESTRoutes() rest.Routes {
 		// Path arguments are assumed to be basic types (string, bool, int
 		// floats) and are automatically converted to match the function
 		// argument.
-		rest.NewRoute("PUT", "/ping/:tick", svc.Ping),
+		rest.NewRoute("/ping/:tick", "PUT", svc.Ping),
 
 		// We can also return errors which will automatically be detected and
 		// converted to a HTTP 400 return code to the user. The HTTP return code
@@ -46,7 +46,7 @@ func (svc *PingService) RESTRoutes() rest.Routes {
 		//
 		// The body is returned as a simple string containing the string
 		// representation of the error object.
-		rest.NewRoute("POST", "/ping/error", svc.PingError),
+		rest.NewRoute("/ping/error", "POST", svc.PingError),
 	}
 }
 
@@ -55,7 +55,7 @@ func ExamplePing() {
 	// Add our service that implements the rest.Routable interface to our
 	// endpoint. We can also add simple lambda functions to our endpoint.
 	rest.AddService(new(PingService))
-	rest.AddRoute("POST", "/simple", func(tick int) int { return tick })
+	rest.AddRoute("/simple", "POST", func(tick int) int { return tick })
 
 	// The endpoint is started like any other http.Server.
 	go rest.ListenAndServe(":12345", nil)

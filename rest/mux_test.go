@@ -35,10 +35,10 @@ func (service *TestService) init() {
 
 func (service *TestService) RESTRoutes() Routes {
 	return Routes{
-		NewRoute("POST", "/map", service.Post),
-		NewRoute("GET", "/map/:key", service.Get),
-		NewRoute("PUT", "/map/:key", service.Put),
-		NewRoute("DELETE", "/map/:key", service.Del),
+		NewRoute("/map", "POST", service.Post),
+		NewRoute("/map/:key", "GET", service.Get),
+		NewRoute("/map/:key", "PUT", service.Put),
+		NewRoute("/map/:key", "DELETE", service.Del),
 	}
 }
 
