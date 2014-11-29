@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 )
 
+// NewServer creates an httptest.Server that uses the given route as the REST
+// handler.
 func NewServer(route *rest.Route) *httptest.Server {
 	endpoint := new(rest.Mux)
 	endpoint.AddRoute(route)
@@ -15,9 +17,11 @@ func NewServer(route *rest.Route) *httptest.Server {
 	return httptest.NewServer(endpoint)
 }
 
-func NewService(routable rest.Routable) *httptest.Server {
+// NewService creates an httptest.Server that uses the given service as the REST
+// handler.
+func NewService(service rest.Routable) *httptest.Server {
 	endpoint := new(rest.Mux)
-	endpoint.AddService(routable)
+	endpoint.AddService(service)
 
 	return httptest.NewServer(endpoint)
 }

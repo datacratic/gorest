@@ -64,8 +64,7 @@ func (mux *Mux) AddRoute(routes ...*Route) {
 	}
 }
 
-// AddRoutable adds all the routes returned by the Routable objects to the
-// mux.
+// AddService adds all the routes returned by the Routable objects to the mux.
 func (mux *Mux) AddService(routables ...Routable) {
 	for _, routable := range routables {
 		mux.AddRoute(routable.RESTRoutes()...)
@@ -137,16 +136,22 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 	}
 }
 
+// DefaultMux is the default Mux used by Serve which uses the
+// http.DefaultServeMux as the DefaultHandler in Mux if no routes match.
 var DefaultMux = new(Mux)
 
+// AddRoute adds a REST route to DefaultMux. See Route type for further details
+// on REST route specification.
 func AddRoute(path, method string, handler interface{}) {
 	DefaultMux.AddRoute(NewRoute(path, method, handler))
 }
 
+// AddService adds a Routable service to DefaultMux.
 func AddService(routable Routable) {
 	DefaultMux.AddService(routable)
 }
 
+// Serve is a proxy for the http.Serve function but using the DefaultMux.
 func Serve(l net.Listener, mux *Mux) error {
 	if mux == nil {
 		mux = DefaultMux
@@ -156,6 +161,8 @@ func Serve(l net.Listener, mux *Mux) error {
 	return srv.Serve(l)
 }
 
+// ListenAndServe is a proxy for the http.ListenAndServe function but using the
+// DefaultMux.
 func ListenAndServe(addr string, mux *Mux) error {
 	if mux == nil {
 		mux = DefaultMux
@@ -165,6 +172,8 @@ func ListenAndServe(addr string, mux *Mux) error {
 	return server.ListenAndServe()
 }
 
+// ListenAndServeTLS is a proxy for the http.ListenAndServeTLS function but
+// using the DefaultMux.
 func ListenAndServeTLS(addr string, certFile string, keyFile string, mux *Mux) error {
 	if mux == nil {
 		mux = DefaultMux
