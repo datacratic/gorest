@@ -51,33 +51,20 @@ func (svc *PingService) RESTRoutes() rest.Routes {
 }
 
 func ExamplePing() {
-	// For testing, the rest package provides a simple TestEndpoint which
-	// automatically binds a random free port. The address of the temporary
-	// endpoint can be accessed through the URL() or RootedURL() functions.
-	endpoint := rest.TestEndpoint{
-
-		// rest.Endpoint is the object to be used in a non-test environment and
-		// embdeds an http.Server struct which can be used to customize the
-		// endpoint.
-		//
-		// Additionally, we can root all the paths managed by this endpoint by
-		// providing the Root parameter.
-		Endpoint: rest.Endpoint{Root: "/v1"},
-	}
 
 	// Add our service that implements the rest.Routable interface to our
 	// endpoint. We can also add simple lambda functions to our endpoint.
-	endpoint.AddRoutable(&PingService{})
-	endpoint.AddRoute(rest.NewRoute("POST", "/simple", func(tick int) int { return tick }))
+	rest.AddService(new(PingService))
+	rest.AddRoute("POST", "/simple", func(tick int) int { return tick })
 
 	// The endpoint is started like any other http.Server.
-	endpoint.ListenAndServe()
+	go rest.ListenAndServe(":12345", nil)
 
 	// The rest package also provides a way to query a REST endpoint by
 	// incrementally building a REST request. The body of the query can be set
 	// via the SetBody() function which will serialize the object to JSON using
 	// the encoding.json package.
-	simpleResp := rest.NewRequest(endpoint.RootedURL(), "POST").
+	simpleResp := rest.NewRequest("http://localhost:12345", "POST").
 		SetPath("/simple").
 		SetBody(123).
 		Send()
@@ -94,7 +81,7 @@ func ExamplePing() {
 	// The REST client can also be customized by manually creating a rest.Client
 	// which can then be used to create REST requests. rest.Client embdeds an
 	// http.Client struct which can be used to customize the HTTP requests.
-	client := &rest.Client{Host: endpoint.URL(), Root: "/v1/ping"}
+	client := &rest.Client{Host: "http://localhost:12345", Root: "/ping"}
 	clientResp := client.NewRequest("PUT").
 		SetPath("%d", 321).
 		Send()

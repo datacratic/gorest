@@ -14,12 +14,11 @@ import (
 )
 
 // Endpoint routes incoming bid requests to the registered routes. Implements
-// the http.Handler interface and can also act as it's own standalone server.
+// the http.Handler interface.
 //
 // The endpoint currently only supports JSON content-type for regular message
 // and text/plain for error messages.
 type Endpoint struct {
-	*http.Server
 
 	// Root is the path prefix of all the routes to be matched by this
 	// endpoint. Must be set before calling Init and can't be changed
@@ -31,6 +30,8 @@ type Endpoint struct {
 	// the client instead.. If it's return value is a rest.CodedError then the
 	// status code of the error object will be used.
 	ErrorFunc func(ErrorType, error) error
+
+	DefaultHandler http.Handler
 
 	initialize sync.Once
 
@@ -49,8 +50,8 @@ func (endpoint *Endpoint) init() {
 		endpoint.Root = "/" + strings.Trim(endpoint.Root, "/")
 	}
 
-	if endpoint.Server == nil {
-		endpoint.Server = &http.Server{}
+	if endpoint.DefaultHandler == nil {
+		endpoint.DefaultHandler = http.DefaultServeMux
 	}
 }
 
@@ -65,53 +66,10 @@ func (endpoint *Endpoint) AddRoute(routes ...*Route) {
 
 // AddRoutable adds all the routes returned by the Routable objects to the
 // endpoint.
-func (endpoint *Endpoint) AddRoutable(routables ...Routable) {
+func (endpoint *Endpoint) AddService(routables ...Routable) {
 	for _, routable := range routables {
 		endpoint.AddRoute(routable.RESTRoutes()...)
 	}
-}
-
-func (endpoint *Endpoint) initServer() {
-	endpoint.Init()
-
-	if endpoint.Handler != nil {
-		log.Panicf("Handler must be nil")
-	}
-
-	endpoint.Handler = endpoint
-}
-
-// Serve is a non-blocking wrapper for http.Server.Serve which panics if an
-// error occurs.
-func (endpoint *Endpoint) Serve(listener net.Listener) {
-	endpoint.initServer()
-	go func() {
-		if err := endpoint.Server.Serve(listener); err != nil {
-			log.Panic(err.Error())
-		}
-	}()
-}
-
-// ListenAndServe is a non-blocking wrapper for http.Server.ListenAndServe which
-// panics if an error occurs.
-func (endpoint *Endpoint) ListenAndServe() {
-	endpoint.initServer()
-	go func() {
-		if err := endpoint.Server.ListenAndServe(); err != nil {
-			log.Panic(err.Error())
-		}
-	}()
-}
-
-// ListenAndServeTLS is a non-blocking wrapper for http.Server.ListenAndServeTLS
-// which panics if an error occurs.
-func (endpoint *Endpoint) ListenAndServeTLS(certFile, keyFile string) {
-	endpoint.initServer()
-	go func() {
-		if err := endpoint.Server.ListenAndServeTLS(certFile, keyFile); err != nil {
-			log.Panic(err.Error())
-		}
-	}()
 }
 
 func (endpoint *Endpoint) route(method, path string) (*Route, []string, error) {
@@ -146,7 +104,8 @@ func (endpoint *Endpoint) ServeHTTP(writer http.ResponseWriter, httpReq *http.Re
 
 	route, args, err := endpoint.route(httpReq.Method, httpReq.URL.Path)
 	if err != nil {
-		endpoint.respondError(writer, UnknownRoute, http.StatusNotFound, err)
+		log.Printf("using default handler for '%s'", httpReq.URL.Path)
+		endpoint.DefaultHandler.ServeHTTP(writer, httpReq)
 		return
 	}
 
@@ -178,52 +137,39 @@ func (endpoint *Endpoint) ServeHTTP(writer http.ResponseWriter, httpReq *http.Re
 	}
 }
 
-// TestEndpoint is a convenience endpoint used to create non-conflicting
-// temporary endpoints in tests.
-type TestEndpoint struct {
-	Endpoint
-	Listener net.Listener
+var DefaultEndpoint = new(Endpoint)
+
+func AddRoute(method, path string, handler interface{}) {
+	DefaultEndpoint.AddRoute(NewRoute(method, path, handler))
 }
 
-// Addr returns the address of the endpoint.
-func (endpoint *TestEndpoint) Addr() net.Addr {
-	return endpoint.Listener.Addr()
+func AddService(routable Routable) {
+	DefaultEndpoint.AddService(routable)
 }
 
-// URL returns the URL where the endpoint can be reached. Does not include the
-// Root of the endpoint in the URL.
-func (endpoint *TestEndpoint) URL() string {
-	return "http://" + endpoint.Addr().String()
-}
-
-// RootedURL returns the URL, including the root,  where the endpoint can be reached.
-func (endpoint *TestEndpoint) RootedURL() string {
-	return "http://" + endpoint.Addr().String() + endpoint.Root
-}
-
-// ListenAndServe is a non-blocking wrapper function for Endpoint.ListenAndServe
-// which allocates a random free port on localhost for the endpoint.
-func (endpoint *TestEndpoint) ListenAndServe() (err error) {
-	endpoint.Listener, err = net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		endpoint.Listener, err = net.Listen("tcp6", "[::1]:0")
+func Serve(l net.Listener, endpoint *Endpoint) error {
+	if endpoint == nil {
+		endpoint = DefaultEndpoint
 	}
 
-	if err == nil {
-		endpoint.Endpoint.Serve(endpoint.Listener)
+	srv := &http.Server{Handler: endpoint}
+	return srv.Serve(l)
+}
+
+func ListenAndServe(addr string, endpoint *Endpoint) error {
+	if endpoint == nil {
+		endpoint = DefaultEndpoint
 	}
 
-	return
+	server := &http.Server{Addr: addr, Handler: endpoint}
+	return server.ListenAndServe()
 }
 
-// Serve is not supported on this endpoint and will panic if called.
-func (endpoint *TestEndpoint) Serve(listener net.Listener) error {
-	log.Panic("unsupported")
-	return nil
-}
+func ListenAndServeTLS(addr string, certFile string, keyFile string, endpoint *Endpoint) error {
+	if endpoint == nil {
+		endpoint = DefaultEndpoint
+	}
 
-// ListenAndServeTLS is not supported on this endpoint and will panic if called.
-func (endpoint *TestEndpoint) ListenAndServeTLS(certFile, keyFile string) error {
-	log.Panic("unsupported")
-	return nil
+	server := &http.Server{Addr: addr, Handler: endpoint}
+	return server.ListenAndServeTLS(certFile, keyFile)
 }

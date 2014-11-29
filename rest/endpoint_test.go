@@ -4,6 +4,7 @@ package rest
 
 import (
 	"fmt"
+	"net/http/httptest"
 	"sync"
 	"testing"
 	"time"
@@ -140,13 +141,6 @@ func (service *TestService) Expect(t *testing.T, title string, exp ...KV) {
 	}
 }
 
-func NewEndpoint(root string, routes ...Routable) *TestEndpoint {
-	endpoint := &TestEndpoint{Endpoint: Endpoint{Root: root}}
-	endpoint.AddRoutable(routes...)
-	endpoint.ListenAndServe()
-	return endpoint
-}
-
 func checkResp(t *testing.T, title string, resp *Response) {
 	if err := resp.GetBody(nil); err != nil {
 		t.Errorf("FAIL(%s): error %s", title, err)
@@ -177,9 +171,14 @@ func failResp(t *testing.T, title string, resp *Response, exp ErrorType, code in
 
 func TestEndpointSimple(t *testing.T) {
 	handler := &TestService{}
-	endpoint := NewEndpoint("/v1", handler)
 
-	client := &Client{Host: endpoint.URL(), Root: "/v1/map/"}
+	endpoint := new(Endpoint)
+	endpoint.AddService(handler)
+
+	server := httptest.NewServer(endpoint)
+	defer server.Close()
+
+	client := &Client{Host: server.URL, Root: "/map/"}
 
 	r00 := client.NewRequest("POST").SetBody(&KV{"a", "1"}).Send()
 	checkResp(t, "p(a,1)", r00)
