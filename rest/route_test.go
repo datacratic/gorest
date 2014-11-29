@@ -30,7 +30,7 @@ func v(name string) PathItem {
 }
 
 func checkRoute(t *testing.T, handler interface{}, path string, exp ...PathItem) (route *Route) {
-	route = NewRoute("POST", path, handler)
+	route = NewRoute(path, "POST", handler)
 
 	if len(exp) != len(route.Path) {
 		t.Errorf("FAIL: path length mismatch: %d:%s != %d:%s",
@@ -51,7 +51,7 @@ func checkRoute(t *testing.T, handler interface{}, path string, exp ...PathItem)
 func failRoute(t *testing.T, handler interface{}, path string) {
 	route := func() (route *Route) {
 		defer func() { recover() }()
-		route = NewRoute("POST", path, handler)
+		route = NewRoute(path, "POST", handler)
 		return
 	}()
 
@@ -295,12 +295,12 @@ func BenchRouteInvoke(b *testing.B, route *Route, args []string, body []byte) {
 }
 
 func BenchmarkRouteInvokeNoop(b *testing.B) {
-	BenchRouteInvoke(b, NewRoute("POST", "", func() {}), nil, nil)
+	BenchRouteInvoke(b, NewRoute("", "POST", func() {}), nil, nil)
 }
 
 func BenchmarkRouteInvoke1Arg(b *testing.B) {
 	args := []string{"10"}
-	route := NewRoute("POST", ":a", func(int) {})
+	route := NewRoute(":a", "POST", func(int) {})
 
 	BenchRouteInvoke(b, route, args, nil)
 }
@@ -313,32 +313,32 @@ func BenchmarkRouteInvoke8Arg(b *testing.B) {
 		path += fmt.Sprintf(":%d/", i)
 	}
 
-	route := NewRoute("POST", path, func(a, b, c, d, e, f, g, h int) {})
+	route := NewRoute(path, "POST", func(a, b, c, d, e, f, g, h int) {})
 
 	BenchRouteInvoke(b, route, args, nil)
 }
 
 func BenchmarkRouteInvokeBody(b *testing.B) {
-	route := NewRoute("POST", "", func(a int) {})
+	route := NewRoute("", "POST", func(a int) {})
 	body := []byte("10")
 
 	BenchRouteInvoke(b, route, nil, body)
 }
 
 func BenchmarkRouteInvokeRet(b *testing.B) {
-	route := NewRoute("POST", "", func() int { return 10 })
+	route := NewRoute("", "POST", func() int { return 10 })
 
 	BenchRouteInvoke(b, route, nil, nil)
 }
 
 func BenchmarkRouteInvokeRetErr(b *testing.B) {
-	route := NewRoute("POST", "", func() error { return nil })
+	route := NewRoute("", "POST", func() error { return nil })
 
 	BenchRouteInvoke(b, route, nil, nil)
 }
 
 func BenchmarkRouteInvokeRetBoth(b *testing.B) {
-	route := NewRoute("POST", "", func() (int, error) { return 10, nil })
+	route := NewRoute("", "POST", func() (int, error) { return 10, nil })
 
 	BenchRouteInvoke(b, route, nil, nil)
 }
@@ -352,7 +352,7 @@ func BenchmarkRouteInvokeAll(b *testing.B) {
 	}
 	body := []byte("10")
 
-	route := NewRoute("POST", path, func(a, b, c, d, e, f, g, h int) (int, error) { return 0, nil })
+	route := NewRoute(path, "POST", func(a, b, c, d, e, f, g, h int) (int, error) { return 0, nil })
 
 	BenchRouteInvoke(b, route, args, body)
 }

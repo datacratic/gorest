@@ -19,7 +19,7 @@ func failAdd(t *testing.T, rt *router, route *Route) {
 
 }
 
-func checkRouter(t *testing.T, rt *router, method, path string, expRoute *Route, expArgs ...PathItem) {
+func checkRouter(t *testing.T, rt *router, path, method string, expRoute *Route, expArgs ...PathItem) {
 	route, args := rt.Route(method, path)
 	if route != expRoute {
 		t.Errorf("FAIL: routed wrong route for '%s %s' -> %s != %s",
@@ -56,62 +56,62 @@ func TestRouter(t *testing.T) {
 
 	rt := &router{}
 
-	r00 := rt.Add(NewRoute("POST", "/", h0))
-	r01 := rt.Add(NewRoute("POST", "/a", h0))
-	r02 := rt.Add(NewRoute("POST", "/c", h0))
-	r03 := rt.Add(NewRoute("POST", "/a/b", h0))
-	r04 := rt.Add(NewRoute("POST", "/b/c", h0))
-	r05 := rt.Add(NewRoute("POST", "/a/b/c", h0))
-	r06 := rt.Add(NewRoute("PUT", "/a/b/c", h0))
+	r00 := rt.Add(NewRoute("/", "POST", h0))
+	r01 := rt.Add(NewRoute("/a", "POST", h0))
+	r02 := rt.Add(NewRoute("/c", "POST", h0))
+	r03 := rt.Add(NewRoute("/a/b", "POST", h0))
+	r04 := rt.Add(NewRoute("/b/c", "POST", h0))
+	r05 := rt.Add(NewRoute("/a/b/c", "POST", h0))
+	r06 := rt.Add(NewRoute("/a/b/c", "PUT", h0))
 
-	r10 := rt.Add(NewRoute("POST", "/:a/b/c", h1))
-	r11 := rt.Add(NewRoute("POST", "/a/:b/c", h1))
-	r12 := rt.Add(NewRoute("POST", "/a/b/:c", h1))
-	r13 := rt.Add(NewRoute("POST", "/:a/b", h1))
-	r14 := rt.Add(NewRoute("POST", "/b/:a", h2))
-	r15 := rt.Add(NewRoute("POST", "/:a", h1))
+	r10 := rt.Add(NewRoute("/:a/b/c", "POST", h1))
+	r11 := rt.Add(NewRoute("/a/:b/c", "POST", h1))
+	r12 := rt.Add(NewRoute("/a/b/:c", "POST", h1))
+	r13 := rt.Add(NewRoute("/:a/b", "POST", h1))
+	r14 := rt.Add(NewRoute("/b/:a", "POST", h2))
+	r15 := rt.Add(NewRoute("/:a", "POST", h1))
 
-	r20 := rt.Add(NewRoute("POST", "/:a/:b/c", h2))
-	r21 := rt.Add(NewRoute("POST", "/:a/:b", h2))
-	r22 := rt.Add(NewRoute("POST", "/:a/b/:c", h2))
-	r23 := rt.Add(NewRoute("POST", "/a/:b/:c", h2))
+	r20 := rt.Add(NewRoute("/:a/:b/c", "POST", h2))
+	r21 := rt.Add(NewRoute("/:a/:b", "POST", h2))
+	r22 := rt.Add(NewRoute("/:a/b/:c", "POST", h2))
+	r23 := rt.Add(NewRoute("/a/:b/:c", "POST", h2))
 
-	r30 := rt.Add(NewRoute("POST", "/:a/:b/:c", h3))
+	r30 := rt.Add(NewRoute("/:a/:b/:c", "POST", h3))
 
-	failAdd(t, rt, NewRoute("POST", "/a/b/c", h0))
-	failAdd(t, rt, NewRoute("POST", "/:a/b", h1))
-	failAdd(t, rt, NewRoute("POST", "/a/b/:c", h1))
+	failAdd(t, rt, NewRoute("/a/b/c", "POST", h0))
+	failAdd(t, rt, NewRoute("/:a/b", "POST", h1))
+	failAdd(t, rt, NewRoute("/a/b/:c", "POST", h1))
 
-	checkRouter(t, rt, "POST", "", r00)
-	checkRouter(t, rt, "POST", "/", r00)
-	checkRouter(t, rt, "POST", "/a", r01)
-	checkRouter(t, rt, "POST", "/c", r02)
-	checkRouter(t, rt, "POST", "/a/b", r03)
-	checkRouter(t, rt, "POST", "/b/c", r04)
-	checkRouter(t, rt, "POST", "/a/b/c", r05)
-	checkRouter(t, rt, "PUT", "/a/b/c", r06)
+	checkRouter(t, rt, "", "POST", r00)
+	checkRouter(t, rt, "/", "POST", r00)
+	checkRouter(t, rt, "/a", "POST", r01)
+	checkRouter(t, rt, "/c", "POST", r02)
+	checkRouter(t, rt, "/a/b", "POST", r03)
+	checkRouter(t, rt, "/b/c", "POST", r04)
+	checkRouter(t, rt, "/a/b/c", "POST", r05)
+	checkRouter(t, rt, "/a/b/c", "PUT", r06)
 
-	checkRouter(t, rt, "POST", "/0/b/c", r10, v("0"))
-	checkRouter(t, rt, "POST", "/a/1/c", r11, v("1"))
-	checkRouter(t, rt, "POST", "/a/b/2", r12, v("2"))
-	checkRouter(t, rt, "POST", "/3/b", r13, v("3"))
-	checkRouter(t, rt, "POST", "/b/4", r14, v("4"))
-	checkRouter(t, rt, "POST", "/5", r15, v("5"))
+	checkRouter(t, rt, "/0/b/c", "POST", r10, v("0"))
+	checkRouter(t, rt, "/a/1/c", "POST", r11, v("1"))
+	checkRouter(t, rt, "/a/b/2", "POST", r12, v("2"))
+	checkRouter(t, rt, "/3/b", "POST", r13, v("3"))
+	checkRouter(t, rt, "/b/4", "POST", r14, v("4"))
+	checkRouter(t, rt, "/5", "POST", r15, v("5"))
 
-	checkRouter(t, rt, "POST", "/0/1/c", r20, v("0"), v("1"))
-	checkRouter(t, rt, "POST", "/2/3", r21, v("2"), v("3"))
-	checkRouter(t, rt, "POST", "/4/b/5", r22, v("4"), v("5"))
-	checkRouter(t, rt, "POST", "/a/6/7", r23, v("6"), v("7"))
+	checkRouter(t, rt, "/0/1/c", "POST", r20, v("0"), v("1"))
+	checkRouter(t, rt, "/2/3", "POST", r21, v("2"), v("3"))
+	checkRouter(t, rt, "/4/b/5", "POST", r22, v("4"), v("5"))
+	checkRouter(t, rt, "/a/6/7", "POST", r23, v("6"), v("7"))
 
-	checkRouter(t, rt, "POST", "/0/1/2", r30, v("0"), v("1"), v("2"))
+	checkRouter(t, rt, "/0/1/2", "POST", r30, v("0"), v("1"), v("2"))
 
-	checkRouter(t, rt, "POST", "/a/b/c/d", nil)
-	checkRouter(t, rt, "POST", "/0/b/c/d", nil)
-	checkRouter(t, rt, "POST", "/a/1/c/d", nil)
-	checkRouter(t, rt, "POST", "/a/b/2/d", nil)
-	checkRouter(t, rt, "POST", "/0/1/2/d", nil)
-	checkRouter(t, rt, "PUT", "/b/c", nil)
-	checkRouter(t, rt, "DELETE", "/a/b/c", nil)
+	checkRouter(t, rt, "/a/b/c/d", "POST", nil)
+	checkRouter(t, rt, "/0/b/c/d", "POST", nil)
+	checkRouter(t, rt, "/a/1/c/d", "POST", nil)
+	checkRouter(t, rt, "/a/b/2/d", "POST", nil)
+	checkRouter(t, rt, "/0/1/2/d", "POST", nil)
+	checkRouter(t, rt, "/b/c", "PUT", nil)
+	checkRouter(t, rt, "/a/b/c", "DELETE", nil)
 }
 
 func BenchRouter(b *testing.B, path string) {
@@ -122,27 +122,27 @@ func BenchRouter(b *testing.B, path string) {
 
 	rt := &router{}
 
-	rt.Add(NewRoute("POST", "/", h0))
-	rt.Add(NewRoute("POST", "/a", h0))
-	rt.Add(NewRoute("POST", "/c", h0))
-	rt.Add(NewRoute("POST", "/a/b", h0))
-	rt.Add(NewRoute("POST", "/b/c", h0))
-	rt.Add(NewRoute("POST", "/a/b/c", h0))
-	rt.Add(NewRoute("PUT", "/a/b/c", h0))
+	rt.Add(NewRoute("/", "POST", h0))
+	rt.Add(NewRoute("/a", "POST", h0))
+	rt.Add(NewRoute("/c", "POST", h0))
+	rt.Add(NewRoute("/a/b", "POST", h0))
+	rt.Add(NewRoute("/b/c", "POST", h0))
+	rt.Add(NewRoute("/a/b/c", "POST", h0))
+	rt.Add(NewRoute("/a/b/c", "PUT", h0))
 
-	rt.Add(NewRoute("POST", "/:a/b/c", h1))
-	rt.Add(NewRoute("POST", "/a/:b/c", h1))
-	rt.Add(NewRoute("POST", "/a/b/:c", h1))
-	rt.Add(NewRoute("POST", "/:a/b", h1))
-	rt.Add(NewRoute("POST", "/b/:a", h2))
-	rt.Add(NewRoute("POST", "/:a", h1))
+	rt.Add(NewRoute("/:a/b/c", "POST", h1))
+	rt.Add(NewRoute("/a/:b/c", "POST", h1))
+	rt.Add(NewRoute("/a/b/:c", "POST", h1))
+	rt.Add(NewRoute("/:a/b", "POST", h1))
+	rt.Add(NewRoute("/b/:a", "POST", h2))
+	rt.Add(NewRoute("/:a", "POST", h1))
 
-	rt.Add(NewRoute("POST", "/:a/:b/c", h2))
-	rt.Add(NewRoute("POST", "/:a/:b", h2))
-	rt.Add(NewRoute("POST", "/:a/b/:c", h2))
-	rt.Add(NewRoute("POST", "/a/:b/:c", h2))
+	rt.Add(NewRoute("/:a/:b/c", "POST", h2))
+	rt.Add(NewRoute("/:a/:b", "POST", h2))
+	rt.Add(NewRoute("/:a/b/:c", "POST", h2))
+	rt.Add(NewRoute("/a/:b/:c", "POST", h2))
 
-	rt.Add(NewRoute("POST", "/:a/:b/:c", h3))
+	rt.Add(NewRoute("/:a/:b/:c", "POST", h3))
 
 	b.ResetTimer()
 
