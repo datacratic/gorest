@@ -5,7 +5,6 @@ package rest
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -102,15 +101,16 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 
 	route, args, err := mux.route(httpReq.Method, httpReq.URL.Path)
 	if err != nil {
-		log.Printf("using default handler for '%s'", httpReq.URL.Path)
 		mux.DefaultHandler.ServeHTTP(writer, httpReq)
 		return
 	}
 
-	if contentType := httpReq.Header.Get("Content-Type"); contentType != "application/json" {
-		err := fmt.Errorf("unsupported content type: got '%s' expected 'application/json'", contentType)
-		mux.respondError(writer, UnsupportedContentType, http.StatusBadRequest, err)
-		return
+	if httpReq.Method != "GET" {
+		if contentType := httpReq.Header.Get("Content-Type"); contentType != "application/json" {
+			err := fmt.Errorf("unsupported content type: got '%s' expected 'application/json'", contentType)
+			mux.respondError(writer, UnsupportedContentType, http.StatusBadRequest, err)
+			return
+		}
 	}
 
 	body, err := ioutil.ReadAll(httpReq.Body)
