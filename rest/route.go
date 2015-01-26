@@ -40,9 +40,10 @@ type Route struct {
 	// object and the other will be the body of the HTTP response.
 	//
 	// The function needs enough arguments to accept the Path arguments and,
-	// optionally, the body of the request. The path arguments will be applied
-	// in the same order as the function arguments with the last function
-	// argument being the body.
+	// optionally, the body of the request.
+	//
+	// No restrictions are applied on the order of the arguments, return values
+	// so long as all the arguments can be filled in from a given HTTP request.
 	//
 	// If any of the previous rules are broken, Route will panic when Init is
 	// called.
