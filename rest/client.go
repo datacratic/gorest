@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -27,19 +28,56 @@ type Client struct {
 	// Root is a prefix that will be preprended to all path requests created by
 	// this client.
 	Root string
+
+	// Header is a list of HTTP requests that will be added to every requests
+	// originating from this client.
+	Header http.Header
+
+	// Limit sets a hard limit on the number of concurrent requests. If not set
+	// then no limits are imposed.
+	Limit uint
+
+	initialize sync.Once
+
+	limit chan struct{}
 }
 
 // NewRequest creates a new Request object for the given HTTP method.
 func (client *Client) NewRequest(method string) *Request {
-	if client.Client == nil {
-		client.Client = http.DefaultClient
-	}
+	client.initialize.Do(func() {
+		if client.Client == nil {
+			client.Client = http.DefaultClient
+		}
+
+		if client.Limit > 0 {
+			client.limit = make(chan struct{})
+
+			for i := uint(0); i < client.Limit; i++ {
+				client.end()
+			}
+		}
+
+	})
 
 	return &Request{
+		REST:   client,
+		Client: client.Client,
 		Host:   client.Host,
 		Method: method,
 		Root:   client.Root,
-		Client: client.Client,
+		Header: client.Header,
+	}
+}
+
+func (client *Client) begin() {
+	if client.limit != nil {
+		<-client.limit
+	}
+}
+
+func (client *Client) end() {
+	if client.limit != nil {
+		client.limit <- struct{}{}
 	}
 }
 
@@ -49,6 +87,9 @@ func (client *Client) NewRequest(method string) *Request {
 // functions. Finally the request is sent via the Send function which returns a
 // Response object.
 type Request struct {
+
+	// REST is the client that originated the request. Can be nil.
+	REST *Client
 
 	// Client is the http.Client used to send the request. Defaults to
 	// http.DefaultClient and can changed via the SetClient method.
@@ -141,7 +182,15 @@ func (req *Request) Send() *Response {
 	resp := &Response{Request: req, Error: req.err}
 
 	if resp.Error == nil {
+		if req.REST != nil {
+			req.REST.begin()
+		}
+
 		req.send(resp)
+
+		if req.REST != nil {
+			req.REST.end()
+		}
 	}
 
 	resp.Latency = time.Since(t0)
