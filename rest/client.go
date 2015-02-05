@@ -50,7 +50,7 @@ func (client *Client) NewRequest(method string) *Request {
 		}
 
 		if client.Limit > 0 {
-			client.limit = make(chan struct{})
+			client.limit = make(chan struct{}, client.Limit)
 
 			for i := uint(0); i < client.Limit; i++ {
 				client.end()
