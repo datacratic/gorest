@@ -59,13 +59,20 @@ func (client *Client) NewRequest(method string) *Request {
 
 	})
 
+	headers := make(http.Header)
+	if client.Header != nil {
+		for key, val := range client.Header {
+			headers[key] = val
+		}
+	}
+
 	return &Request{
 		REST:   client,
 		Client: client.Client,
 		Host:   client.Host,
 		Method: method,
 		Root:   client.Root,
-		Header: client.Header,
+		Header: headers,
 	}
 }
 
