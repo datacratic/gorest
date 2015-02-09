@@ -285,7 +285,7 @@ func (resp *Response) GetBody(obj interface{}) (err *Error) {
 		}
 		err = ErrorFmt(UnexpectedStatusCode, "unexpected status code: 204")
 
-	} else if contentType := resp.Header.Get("Content-Type"); contentType != "application/json" {
+	} else if contentType := resp.Header.Get("Content-Type"); len(resp.Body) > 0 && contentType != "application/json" {
 		err = ErrorFmt(UnsupportedContentType, "unsupported content-type: '%s' != 'application/json'", contentType)
 
 	} else if jsonErr := json.Unmarshal(resp.Body, obj); err != nil {
