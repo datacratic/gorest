@@ -162,6 +162,21 @@ func (route *Route) parseArg(data string, value reflect.Value) (err error) {
 	return
 }
 
+func (route *Route) isNil(obj reflect.Value) bool {
+	switch obj.Kind() {
+
+	case reflect.String:
+		return obj.Len() == 0
+
+	case reflect.Chan, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		return obj.IsNil()
+
+	default:
+		return false
+
+	}
+}
+
 func (route *Route) invoke(args []string, body []byte) ([]byte, *Error) {
 	var err error
 	var in []reflect.Value
@@ -191,7 +206,7 @@ func (route *Route) invoke(args []string, body []byte) ([]byte, *Error) {
 
 	var ret []byte
 
-	if route.outBody >= 0 {
+	if route.outBody >= 0 && !route.isNil(out[route.outBody]) {
 		if ret, err = json.Marshal(out[route.outBody].Interface()); err != nil {
 			return nil, &Error{MarshalError, err}
 		}

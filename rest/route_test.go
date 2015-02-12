@@ -169,6 +169,11 @@ func TestRouteInvokeString(t *testing.T) {
 	rStrArg := checkRoute(t, hStr, "str/:arg", f("str"), v("arg"))
 	checkInvoke(t, rStrArg, `"cba"`, ``, v("cb"))
 	checkInvoke(t, rStrArg, `"cba"`, `"blah"`, v("cb"))
+
+	hNilStr := func() string { return "" }
+
+	rNilStr := checkRoute(t, hNilStr, "str/nil", f("str"), f("nil"))
+	checkInvoke(t, rNilStr, ``, ``)
 }
 
 func TestRouteInvokeBool(t *testing.T) {
@@ -249,6 +254,11 @@ func TestRouteInvokePtr(t *testing.T) {
 	checkInvoke(t, rPtr, `{"val":1}`, `{}`)
 	failInvoke(t, rPtr, UnmarshalError, ``)
 	failInvoke(t, rPtr, UnmarshalError, `{"val":123`)
+
+	hNilPtr := func(t *T) *T { return nil }
+
+	rNilPtr := checkRoute(t, hNilPtr, "ptr/nil", f("ptr"), f("nil"))
+	checkInvoke(t, rNilPtr, ``, `null`)
 }
 
 func TestRouteInvokeMulti(t *testing.T) {
