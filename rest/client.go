@@ -140,6 +140,12 @@ func NewRequest(host, method string) *Request {
 	}
 }
 
+// SetHost selects the host where the request will be sent.
+func (req *Request) SetHost(host string) *Request {
+	req.Host = host
+	return req
+}
+
 // SetClient selects the http.Client to be used to execute the requests.
 func (req *Request) SetClient(client *http.Client) *Request {
 	req.Client = client
