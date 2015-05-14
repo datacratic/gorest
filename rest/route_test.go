@@ -126,6 +126,7 @@ func checkInvoke(t *testing.T, route *Route, exp string, body string, args ...Pa
 	if string(ret) != exp {
 		t.Errorf("FAIL%s: return mismatch '%s','%s' -> %s != %s",
 			route, body, printPath(args...), string(ret), exp)
+		t.Error(ret)
 		return
 	}
 }
@@ -163,12 +164,12 @@ func TestRouteInvokeString(t *testing.T) {
 	hStr := func(s string) string { return s + "a" }
 
 	rStrBody := checkRoute(t, hStr, "str/body", f("str"), f("body"))
-	checkInvoke(t, rStrBody, `"cba"`, `"cb"`)
+	checkInvoke(t, rStrBody, `"cba"`+"\n", `"cb"`)
 	failInvoke(t, rStrBody, UnmarshalError, ``)
 
 	rStrArg := checkRoute(t, hStr, "str/:arg", f("str"), v("arg"))
-	checkInvoke(t, rStrArg, `"cba"`, ``, v("cb"))
-	checkInvoke(t, rStrArg, `"cba"`, `"blah"`, v("cb"))
+	checkInvoke(t, rStrArg, `"cba"`+"\n", ``, v("cb"))
+	checkInvoke(t, rStrArg, `"cba"`+"\n", `"blah"`, v("cb"))
 
 	hNilStr := func() string { return "" }
 
@@ -180,13 +181,13 @@ func TestRouteInvokeBool(t *testing.T) {
 	hBool := func(b bool) bool { return !b }
 
 	rBoolBody := checkRoute(t, hBool, "bool/body", f("bool"), f("body"))
-	checkInvoke(t, rBoolBody, "false", "true")
+	checkInvoke(t, rBoolBody, "false"+"\n", "true")
 	failInvoke(t, rBoolBody, UnmarshalError, "")
 	failInvoke(t, rBoolBody, UnmarshalError, "abc")
 
 	rBoolArg := checkRoute(t, hBool, "bool/:arg", f("bool"), v("arg"))
-	checkInvoke(t, rBoolArg, "false", "", v("true"))
-	checkInvoke(t, rBoolArg, "false", "false", v("true"))
+	checkInvoke(t, rBoolArg, "false"+"\n", "", v("true"))
+	checkInvoke(t, rBoolArg, "false"+"\n", "false", v("true"))
 	failInvoke(t, rBoolArg, UnmarshalError, "", v("abc"))
 }
 
@@ -194,14 +195,14 @@ func TestRouteInvokeInt(t *testing.T) {
 	hInt := func(i int) int { return i + 1 }
 
 	rIntBody := checkRoute(t, hInt, "int/body", f("int"), f("body"))
-	checkInvoke(t, rIntBody, "124", "123")
+	checkInvoke(t, rIntBody, "124"+"\n", "123")
 	failInvoke(t, rIntBody, UnmarshalError, "")
 	failInvoke(t, rIntBody, UnmarshalError, "abc")
 	failInvoke(t, rIntBody, UnmarshalError, "1.2")
 
 	rIntArg := checkRoute(t, hInt, "int/:arg", f("int"), v("arg"))
-	checkInvoke(t, rIntArg, "124", "", v("123"))
-	checkInvoke(t, rIntArg, "124", "321", v("123"))
+	checkInvoke(t, rIntArg, "124"+"\n", "", v("123"))
+	checkInvoke(t, rIntArg, "124"+"\n", "321", v("123"))
 	failInvoke(t, rIntArg, UnmarshalError, "", v("abc"))
 	failInvoke(t, rIntArg, UnmarshalError, "", v("1.2"))
 }
@@ -210,14 +211,14 @@ func TestRouteInvokeUint(t *testing.T) {
 	hUint := func(u uint) uint { return u + 1 }
 
 	rUintBody := checkRoute(t, hUint, "uint/body", f("uint"), f("body"))
-	checkInvoke(t, rUintBody, "124", "123")
+	checkInvoke(t, rUintBody, "124"+"\n", "123")
 	failInvoke(t, rUintBody, UnmarshalError, "")
 	failInvoke(t, rUintBody, UnmarshalError, "abc")
 	failInvoke(t, rUintBody, UnmarshalError, "-123")
 
 	rUintArg := checkRoute(t, hUint, "uint/:arg", f("uint"), v("arg"))
-	checkInvoke(t, rUintArg, "124", "", v("123"))
-	checkInvoke(t, rUintArg, "124", "321", v("123"))
+	checkInvoke(t, rUintArg, "124"+"\n", "", v("123"))
+	checkInvoke(t, rUintArg, "124"+"\n", "321", v("123"))
 	failInvoke(t, rUintArg, UnmarshalError, "", v("abc"))
 	failInvoke(t, rUintArg, UnmarshalError, "", v("-123"))
 }
@@ -226,13 +227,13 @@ func TestRouteInvokeFloat(t *testing.T) {
 	hFloat := func(f float64) float64 { return f + 1 }
 
 	rFloatBody := checkRoute(t, hFloat, "float/body", f("float"), f("body"))
-	checkInvoke(t, rFloatBody, "124.5", "123.5")
+	checkInvoke(t, rFloatBody, "124.5"+"\n", "123.5")
 	failInvoke(t, rFloatBody, UnmarshalError, "")
 	failInvoke(t, rFloatBody, UnmarshalError, "abc")
 
 	rFloatArg := checkRoute(t, hFloat, "float/:arg", f("float"), v("arg"))
-	checkInvoke(t, rFloatArg, "124.5", "", v("123.5"))
-	checkInvoke(t, rFloatArg, "124.5", "321.1", v("123.5"))
+	checkInvoke(t, rFloatArg, "124.5"+"\n", "", v("123.5"))
+	checkInvoke(t, rFloatArg, "124.5"+"\n", "321.1", v("123.5"))
 	failInvoke(t, rFloatArg, UnmarshalError, "", v("abc"))
 }
 
@@ -240,8 +241,8 @@ func TestRouteInvokeObj(t *testing.T) {
 	hObj := func(t T) T { return T{t.Value + 1} }
 
 	rObj := checkRoute(t, hObj, "obj/body", f("obj"), f("body"))
-	checkInvoke(t, rObj, `{"val":124}`, `{"val":123}`)
-	checkInvoke(t, rObj, `{"val":1}`, `{}`)
+	checkInvoke(t, rObj, `{"val":124}`+"\n", `{"val":123}`)
+	checkInvoke(t, rObj, `{"val":1}`+"\n", `{}`)
 	failInvoke(t, rObj, UnmarshalError, ``)
 	failInvoke(t, rObj, UnmarshalError, `{"val":123`)
 }
@@ -250,8 +251,8 @@ func TestRouteInvokePtr(t *testing.T) {
 	hPtr := func(t *T) *T { return &T{t.Value + 1} }
 
 	rPtr := checkRoute(t, hPtr, "ptr/body", f("ptr"), f("body"))
-	checkInvoke(t, rPtr, `{"val":124}`, `{"val":123}`)
-	checkInvoke(t, rPtr, `{"val":1}`, `{}`)
+	checkInvoke(t, rPtr, `{"val":124}`+"\n", `{"val":123}`)
+	checkInvoke(t, rPtr, `{"val":1}`+"\n", `{}`)
 	failInvoke(t, rPtr, UnmarshalError, ``)
 	failInvoke(t, rPtr, UnmarshalError, `{"val":123`)
 
@@ -265,14 +266,14 @@ func TestRouteInvokeMulti(t *testing.T) {
 	hMulti := func(a, b, c int) int { return a + b + c }
 
 	rMulti0 := checkRoute(t, hMulti, "multi/:a/:b/:c", f("multi"), v("a"), v("b"), v("c"))
-	checkInvoke(t, rMulti0, "123", "", v("100"), v("20"), v("3"))
-	checkInvoke(t, rMulti0, "123", "", v("3"), v("20"), v("100"))
+	checkInvoke(t, rMulti0, "123"+"\n", "", v("100"), v("20"), v("3"))
+	checkInvoke(t, rMulti0, "123"+"\n", "", v("3"), v("20"), v("100"))
 	failInvoke(t, rMulti0, UnmarshalError, "", v("100"), v("20"), v("a"))
 	failInvoke(t, rMulti0, UnmarshalError, "", v("a"), v("20"), v("100"))
 
 	rMulti1 := checkRoute(t, hMulti, "multi/:a/:c", f("multi"), v("a"), v("c"))
-	checkInvoke(t, rMulti1, "123", "20", v("100"), v("3"))
-	checkInvoke(t, rMulti1, "123", "20", v("3"), v("100"))
+	checkInvoke(t, rMulti1, "123"+"\n", "20", v("100"), v("3"))
+	checkInvoke(t, rMulti1, "123"+"\n", "20", v("3"), v("100"))
 	failInvoke(t, rMulti1, UnmarshalError, "", v("a"), v("100"))
 	failInvoke(t, rMulti1, UnmarshalError, "a", v("a"), v("100"))
 	failInvoke(t, rMulti1, UnmarshalError, "20", v("100"), v("a"))

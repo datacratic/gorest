@@ -3,6 +3,7 @@
 package rest
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -173,7 +174,11 @@ func (req *Request) AddHeader(key, value string) *Request {
 // request. The Content-Length header will be automatically set.
 func (req *Request) SetBody(obj interface{}) *Request {
 	var err error
-	if req.Body, err = json.Marshal(obj); err == nil {
+	var buf bytes.Buffer
+	bufWriter := bufio.NewWriter(&buf)
+	if err = json.NewEncoder(bufWriter).Encode(obj); err == nil {
+		bufWriter.Flush()
+		req.Body = buf.Bytes()
 		req.AddHeader("Content-Length", strconv.Itoa(len(req.Body)))
 
 	} else {
@@ -273,6 +278,7 @@ type Response struct {
 // the response body if the given object is not nil. If an error is detected,
 // the error type and error will be returned instead.
 func (resp *Response) GetBody(obj interface{}) (err *Error) {
+	buf := bytes.NewReader(resp.Body)
 	if resp.Error != nil {
 		err = resp.Error
 
@@ -294,7 +300,7 @@ func (resp *Response) GetBody(obj interface{}) (err *Error) {
 	} else if contentType := resp.Header.Get("Content-Type"); len(resp.Body) > 0 && contentType != "application/json" {
 		err = ErrorFmt(UnsupportedContentType, "unsupported content-type: '%s' != 'application/json'", contentType)
 
-	} else if jsonErr := json.Unmarshal(resp.Body, obj); err != nil {
+	} else if jsonErr := json.NewDecoder(buf).Decode(obj); jsonErr != nil {
 		err = &Error{UnmarshalError, jsonErr}
 	}
 

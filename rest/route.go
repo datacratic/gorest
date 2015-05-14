@@ -3,6 +3,8 @@
 package rest
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -187,7 +189,8 @@ func (route *Route) invoke(args []string, body []byte) ([]byte, *Error) {
 		if i < len(args) {
 			err = route.parseArg(args[i], arg.Elem())
 		} else {
-			err = json.Unmarshal(body, arg.Interface())
+			buf := bytes.NewReader(body)
+			err = json.NewDecoder(buf).Decode(arg.Interface())
 		}
 
 		if err != nil {
@@ -204,15 +207,17 @@ func (route *Route) invoke(args []string, body []byte) ([]byte, *Error) {
 		return nil, &Error{HandlerError, err}
 	}
 
-	var ret []byte
+	ret := new(bytes.Buffer)
 
 	if route.outBody >= 0 && !route.isNil(out[route.outBody]) {
-		if ret, err = json.Marshal(out[route.outBody].Interface()); err != nil {
+		bufWriter := bufio.NewWriter(ret)
+		if err = json.NewEncoder(bufWriter).Encode(out[route.outBody].Interface()); err != nil {
 			return nil, &Error{MarshalError, err}
 		}
+		bufWriter.Flush()
 	}
 
-	return ret, nil
+	return ret.Bytes(), nil
 }
 
 // String returns a string represenation of the object suitable for debugging.
