@@ -183,6 +183,12 @@ func (req *Request) SetBody(obj interface{}) *Request {
 	return req
 }
 
+func (req *Request) SetRawBody(obj json.RawMessage) *Request {
+	req.Body = obj
+	req.AddHeader("Content-Length", strconv.Itoa(len(obj)))
+	return req
+}
+
 // Send attempts to send the request to the remote endpoint and returns a
 // Response which contains the result.
 func (req *Request) Send() *Response {
