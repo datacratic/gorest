@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -114,6 +115,10 @@ type Request struct {
 	// remote endpoint. Can be changed via the SetPath method.
 	Path string
 
+	// Query contains the url parameters and values that will be sent with the
+	// request. Paramerters can be added via the AddParam method.
+	Query url.Values
+
 	// Method is the HTTP verb used for the HTTP request.
 	Method string
 
@@ -156,6 +161,15 @@ func (req *Request) SetClient(client *http.Client) *Request {
 // that the root is prefixed to the path before formatting the string.
 func (req *Request) SetPath(path string, args ...interface{}) *Request {
 	req.Path = fmt.Sprintf(JoinPath(req.Root, path), args...)
+	return req
+}
+
+// AddParam adds a parameter to the query string.
+func (req *Request) AddParam(key, value string) *Request {
+	if req.Query == nil {
+		req.Query = url.Values{}
+	}
+	req.Query.Add(key, value)
 	return req
 }
 
@@ -223,6 +237,10 @@ func (req *Request) send(resp *Response) {
 	}
 
 	url := strings.TrimRight(req.Host, "/") + req.Path
+
+	if req.Query != nil {
+		url += "?" + req.Query.Encode()
+	}
 
 	var err error
 

@@ -84,6 +84,8 @@ func ExamplePing() {
 	client := &rest.Client{Host: "http://localhost:12345", Root: "/ping"}
 	clientResp := client.NewRequest("PUT").
 		SetPath("%d", 321).
+		AddParam("test", "321").
+		AddParam("test2", "3212").
 		Send()
 
 	if err := clientResp.GetBody(&tick); err != nil {
