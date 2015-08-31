@@ -67,6 +67,8 @@ func ExamplePing() {
 	// The endpoint is started like any other http.Server.
 	go rest.ListenAndServe(":12345", nil)
 
+	time.Sleep(10 * time.Millisecond)
+
 	// The rest package also provides a way to query a REST endpoint by
 	// incrementally building a REST request. The body of the query can be set
 	// via the SetBody() function which will serialize the object to JSON using
@@ -114,7 +116,7 @@ func ExamplePing() {
 		SetPath("delay").
 		Send()
 
-	if err := timeoutResp.GetBody(&tick); err == nil {
+	if err := timeoutResp.GetBody(&tick); err.Type != rest.TimeoutError {
 		panic("Whoops! Should time out" + fmt.Sprint(tick))
 	}
 
