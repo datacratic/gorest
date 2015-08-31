@@ -7,6 +7,9 @@ import (
 
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
+	"time"
 )
 
 // Our service that we want to expose through a REST api.
@@ -14,6 +17,7 @@ type PingService struct{}
 
 func (*PingService) Ping(tick int) int { return tick }
 func (*PingService) PingError() error  { return errors.New("BOOM") }
+func (*PingService) PingDelay() int    { time.Sleep(5 * time.Second); return 1 }
 
 // RESTRoutes implements the rest.Routable interface which is used by
 // rest.Endpoint to route incoming HTTP request to the appropriate handler.
@@ -47,6 +51,9 @@ func (svc *PingService) RESTRoutes() rest.Routes {
 		// The body is returned as a simple string containing the string
 		// representation of the error object.
 		rest.NewRoute("/ping/error", "POST", svc.PingError),
+
+		// Used for testing the Timeout() feature of a request.
+		rest.NewRoute("/ping/delay", "GET", svc.PingDelay),
 	}
 }
 
@@ -92,6 +99,24 @@ func ExamplePing() {
 		panic("Whoops!")
 	}
 	fmt.Println("ping-client:", tick)
+
+	// The REST client can check if a response timed out.
+	dialer := net.Dialer{Timeout: 500 * time.Millisecond}
+	clientTime := &rest.Client{
+		Host: "http://localhost:12345",
+		Root: "/ping",
+		Client: &http.Client{
+			Transport: &http.Transport{Dial: dialer.Dial},
+			Timeout:   500 * time.Millisecond,
+		},
+	}
+	timeoutResp := clientTime.NewRequest("GET").
+		SetPath("delay").
+		Send()
+
+	if err := timeoutResp.GetBody(&tick); err == nil {
+		panic("Whoops! Should time out" + fmt.Sprint(tick))
+	}
 
 	// Output:
 	// ping-simple: 123

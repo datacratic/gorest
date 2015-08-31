@@ -39,6 +39,10 @@ const (
 	// request.
 	SendRequestError = "send-request-error"
 
+	// TimeoutError indicates that the request timed out while sending an HTTP
+	// request.
+	TimeoutError = "timeout-error"
+
 	// UnmarshalError indicates that an error occured while deserializing the
 	// body of an HTTP response.
 	UnmarshalError = "unmarshal-error"

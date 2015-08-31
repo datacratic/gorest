@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -236,15 +237,15 @@ func (req *Request) send(resp *Response) {
 		reader = bytes.NewReader(req.Body)
 	}
 
-	url := strings.TrimRight(req.Host, "/") + req.Path
+	urlS := strings.TrimRight(req.Host, "/") + req.Path
 
 	if req.Query != nil {
-		url += "?" + req.Query.Encode()
+		urlS += "?" + req.Query.Encode()
 	}
 
 	var err error
 
-	if req.HTTP, err = http.NewRequest(req.Method, url, reader); err != nil {
+	if req.HTTP, err = http.NewRequest(req.Method, urlS, reader); err != nil {
 		resp.Error = &Error{NewRequestError, err}
 		return
 	}
@@ -254,6 +255,14 @@ func (req *Request) send(resp *Response) {
 
 	httpResp, err := req.Client.Do(req.HTTP)
 	if err != nil {
+		if err2, ok := err.(*url.Error); ok {
+			if err3, ok := err2.Err.(net.Error); ok {
+				if err3.Timeout() {
+					resp.Error = &Error{TimeoutError, err}
+					return
+				}
+			}
+		}
 		resp.Error = &Error{SendRequestError, err}
 		return
 	}
