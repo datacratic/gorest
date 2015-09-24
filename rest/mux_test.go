@@ -175,6 +175,8 @@ func TestMuxSimple(t *testing.T) {
 	mux := new(Mux)
 	mux.AddService(handler)
 
+	mux.PrintRoutes()
+
 	server := httptest.NewServer(mux)
 	defer server.Close()
 

@@ -65,13 +65,15 @@ func ExamplePing() {
 	rest.AddRoute("/simple", "POST", func(tick int) int { return tick })
 
 	// The endpoint is started like any other http.Server.
-	go rest.ListenAndServe(":12345", nil)
+	go rest.ListenAndServe(":11263", nil)
+
+	time.Sleep(30 * time.Millisecond)
 
 	// The rest package also provides a way to query a REST endpoint by
 	// incrementally building a REST request. The body of the query can be set
 	// via the SetBody() function which will serialize the object to JSON using
 	// the encoding.json package.
-	simpleResp := rest.NewRequest("http://localhost:12345", "POST").
+	simpleResp := rest.NewRequest("http://localhost:11263", "POST").
 		SetPath("/simple").
 		SetBody(123).
 		Send()
@@ -81,14 +83,14 @@ func ExamplePing() {
 	// encoding.json package.
 	var tick int
 	if err := simpleResp.GetBody(&tick); err != nil {
-		panic("Whoops!")
+		panic("Whoops! " + fmt.Sprint(err))
 	}
 	fmt.Println("ping-simple:", tick)
 
 	// The REST client can also be customized by manually creating a rest.Client
 	// which can then be used to create REST requests. rest.Client embdeds an
 	// http.Client struct which can be used to customize the HTTP requests.
-	client := &rest.Client{Host: "http://localhost:12345", Root: "/ping"}
+	client := &rest.Client{Host: "http://localhost:11263", Root: "/ping"}
 	clientResp := client.NewRequest("PUT").
 		SetPath("%d", 321).
 		AddParam("test", "321").
@@ -103,7 +105,7 @@ func ExamplePing() {
 	// The REST client can check if a response timed out.
 	dialer := net.Dialer{Timeout: 500 * time.Millisecond}
 	clientTime := &rest.Client{
-		Host: "http://localhost:12345",
+		Host: "http://localhost:11263",
 		Root: "/ping",
 		Client: &http.Client{
 			Transport: &http.Transport{Dial: dialer.Dial},

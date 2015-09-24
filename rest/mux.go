@@ -51,6 +51,8 @@ func (mux *Mux) init() {
 	if mux.DefaultHandler == nil {
 		mux.DefaultHandler = http.DefaultServeMux
 	}
+
+	mux.router.Add(NewRoute("/mux", "GET", mux.PrintRoutes))
 }
 
 // AddRoute adds all the given routes to the mux.
@@ -133,4 +135,10 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 		header.Set("Content-Length", strconv.FormatInt(int64(len(resp)), 10))
 		writer.Write(resp)
 	}
+}
+
+// Print all the routes in the mux.
+func (mux *Mux) PrintRoutes() {
+	mux.Init()
+	mux.router.PrintRoutes()
 }

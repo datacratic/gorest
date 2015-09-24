@@ -217,5 +217,5 @@ func (route *Route) invoke(args []string, body []byte) ([]byte, *Error) {
 
 // String returns a string represenation of the object suitable for debugging.
 func (route *Route) String() string {
-	return fmt.Sprintf("{ %s %s }", route.Method, route.Path)
+	return fmt.Sprintf("{ %s %s %s }", route.Method, route.Path, route.handlerType)
 }

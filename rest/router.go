@@ -3,6 +3,7 @@
 package rest
 
 import (
+	"fmt"
 	"log"
 )
 
@@ -82,4 +83,20 @@ func (rt *router) route(method string, path []string, args []string) (*Route, []
 	}
 
 	return nil, args
+}
+
+func (rt *router) PrintRoutes() {
+	if rt.routes != nil {
+		for _, route := range rt.routes {
+			fmt.Println(route)
+		}
+	}
+	if rt.fixed != nil {
+		for _, r := range rt.fixed {
+			r.PrintRoutes()
+		}
+	}
+	if rt.variable != nil {
+		rt.variable.PrintRoutes()
+	}
 }
