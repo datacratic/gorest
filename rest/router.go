@@ -85,18 +85,19 @@ func (rt *router) route(method string, path []string, args []string) (*Route, []
 	return nil, args
 }
 
-func (rt *router) PrintRoutes() {
+func (rt *router) PrintRoutes(routes []string) []string {
 	if rt.routes != nil {
 		for _, route := range rt.routes {
-			fmt.Println(route)
+			routes = append(routes, fmt.Sprint(route))
 		}
 	}
 	if rt.fixed != nil {
 		for _, r := range rt.fixed {
-			r.PrintRoutes()
+			routes = r.PrintRoutes(routes)
 		}
 	}
 	if rt.variable != nil {
-		rt.variable.PrintRoutes()
+		routes = rt.variable.PrintRoutes(routes)
 	}
+	return routes
 }
