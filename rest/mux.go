@@ -4,12 +4,15 @@ package rest
 
 import (
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 )
+
+//go:generate go run templates/include_templates.go
 
 // Mux routes incoming bid requests to the registered routes. Implements
 // the http.Handler interface.
@@ -51,8 +54,6 @@ func (mux *Mux) init() {
 	if mux.DefaultHandler == nil {
 		mux.DefaultHandler = http.DefaultServeMux
 	}
-
-	mux.router.Add(NewRoute("/mux", "GET", mux.GetRoutes))
 }
 
 // AddRoute adds all the given routes to the mux.
@@ -101,6 +102,39 @@ func (mux *Mux) respondError(writer http.ResponseWriter, errType ErrorType, code
 func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 	mux.Init()
 
+	if httpReq.URL.Path == "/documentation" {
+		funcMap := make(template.FuncMap)
+		funcMap["Split"] = strings.Split
+		funcMap["Contains"] = strings.Contains
+		funcMap["JsonParam"] = func(b string) (string, error) {
+			if b == "hello" {
+				return "true", nil
+			} else {
+				return "", fmt.Errorf("not hello")
+			}
+		}
+		t, err := template.New("documentation.html").Funcs(funcMap).Parse(documentation)
+		if err != nil {
+			mux.respondError(writer, "html-template-error", http.StatusBadRequest, err)
+			return
+		}
+
+		routes := mux.router.PrintRoutes(make([]*Route, 0))
+
+		page := struct {
+			Title  string
+			Host   string
+			Routes []*Route
+		}{
+			"bidderd",
+			httpReq.Host,
+			routes,
+		}
+		println("host", httpReq.Host)
+		t.Execute(writer, page)
+		return
+	}
+
 	route, args, err := mux.route(httpReq.Method, httpReq.URL.Path)
 	if err != nil {
 		mux.DefaultHandler.ServeHTTP(writer, httpReq)
@@ -135,11 +169,4 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 		header.Set("Content-Length", strconv.FormatInt(int64(len(resp)), 10))
 		writer.Write(resp)
 	}
-}
-
-// Print all the routes in the mux.
-func (mux *Mux) GetRoutes() string {
-	mux.Init()
-	routes := mux.router.PrintRoutes([]string{})
-	return strings.Join(routes, "\n")
 }

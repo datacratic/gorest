@@ -3,7 +3,6 @@
 package rest
 
 import (
-	"fmt"
 	"log"
 )
 
@@ -85,10 +84,10 @@ func (rt *router) route(method string, path []string, args []string) (*Route, []
 	return nil, args
 }
 
-func (rt *router) PrintRoutes(routes []string) []string {
+func (rt *router) PrintRoutes(routes []*Route) []*Route {
 	if rt.routes != nil {
 		for _, route := range rt.routes {
-			routes = append(routes, fmt.Sprint(route))
+			routes = append(routes, route)
 		}
 	}
 	if rt.fixed != nil {
