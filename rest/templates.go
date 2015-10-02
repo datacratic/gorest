@@ -2,7 +2,7 @@ package rest
 
 const(
 documentation = `
-{{ define "test2" }}
+{{ define "path-param" }}
     {{ $arr := Split ( js . ) "/" }}
     {{ js . }}
     <div class="row">
@@ -19,6 +19,19 @@ documentation = `
     </div>
 {{ end }}
 
+{{ define "body-param" }}
+    {{ if .HasBodyParam }}
+    <div class="row">
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label for="body">Body</label>
+                <textarea id="body" class="form-control" rows="10">{{ .JsonSchema }}
+                </textarea>
+            </div>
+        </div>
+    </div>
+    {{ end }}
+{{ end }}
 
 {{$page := .}}
 
@@ -31,7 +44,6 @@ documentation = `
     <div>
         {{ if eq $route.Method "PUT" }}
             <div class="bg-warning">
-
                 <form id="{{ printf "%s-%s" $route.Method $route.Path }}">
                     <input type="button"
                         class="btn btn-warning"
@@ -40,7 +52,9 @@ documentation = `
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
-                    {{ template "test2" $route.Path }}
+                    {{ template "path-param" $route.Path }}
+                    <br>
+                    {{ template "body-param" $route }}
                 </form>
             </div>
             <div id="{{$route.Method}}-{{$route.Path}}"></div>
@@ -52,14 +66,17 @@ documentation = `
                     <input type="button"
                         class="btn btn-success active"
                         value="{{$route.Method}}"
-                        onClick="doDelete(this.form,
+                        onClick="doPost(this.form,
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
-                    {{ template "test2" $route.Path }}
+                    {{ template "path-param" $route.Path }}
+                    <br>
+                    {{ template "body-param" $route }}
                 </form>
             </div>
             <div id="{{$route.Method}}-{{$route.Path}}"></div>
+
 
 
         {{ else if eq $route.Method "DELETE" }}
@@ -72,7 +89,9 @@ documentation = `
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
-                    {{ template "test2" $route.Path }}
+                    {{ template "path-param" $route.Path }}
+                    <br>
+                    {{ template "body-param" $route }}
                 </form>
             </div>
             <div id="{{$route.Method}}-{{$route.Path}}"></div>
@@ -80,25 +99,25 @@ documentation = `
 
         {{ else if eq $route.Method "GET"}}
             <div class="bg-info">
-                <button type="button"
-                    class="btn btn-info"
-                    onClick="doGet(
-                        '{{printf "%s-%s" $route.Method $route.Path}}',
-                        '{{ printf "http://%s%s" $page.Host $route.Path}}'
+                <form id="{{ printf "%s-%s" $route.Method $route.Path }}">
+                    <input type="button"
+                        class="btn btn-info active"
+                        value="{{$route.Method}}"
+                        onClick="doGet(this.form,
+                            '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
+                            '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
-                    {{$route.Method}}
-                </button> {{ template "test2" $route.Path }}
+                    {{ template "path-param" $route.Path }}
+                    <br>
+                    {{ template "body-param" $route }}
+                </form>
             </div>
             <div id="{{ printf "%s-%s" $route.Method $route.Path}}"></div>
 
 
         {{ else }}
             <p class="bg-primary">
-                <a class="btn btn-primary active"
-                    role="button" 
-                    href=http://{{$page.Host}}{{$route.Path}}>
-                    {{$route.Method}}
-                </a> {{$route.Path}}
+                Unsupported HTTP Verb {{ $route.Method }}
             </p>
         {{ end }}
     </div>
@@ -135,6 +154,16 @@ documentation = `
             }
         }
         return path;
+    }
+
+    function getBody(divID, resultDiv) {
+        textArea = $("form#"+divID+" textarea#body");
+        console.log(textArea);
+        if (textArea.length > 0) {
+            return textArea[0].value
+        } else {
+            return
+        }
     }
 
     function doGet(divID, path) {
@@ -182,10 +211,14 @@ documentation = `
         resultDiv = $("div#"+divID);
         path = replaceInPath(divID, path, resultDiv);
         if (!path) { return; }
+
+        var bod = getBody(divID, resultDiv);
+        console.log(bod)
         
         $.ajax({
             url: path,
             type: 'POST',
+            data: bod,
             headers: { "Content-Type": "application/json" }, 
             success: function(result) {
                 resultDiv.html(result);

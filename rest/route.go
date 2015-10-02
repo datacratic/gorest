@@ -3,6 +3,8 @@
 package rest
 
 import (
+	"github.com/datacratic/gopath/path"
+
 	"encoding/json"
 	"fmt"
 	"log"
@@ -52,6 +54,7 @@ type Route struct {
 
 	handler     reflect.Value
 	handlerType reflect.Type
+	bodyType    reflect.Type
 
 	inBody   int
 	outBody  int
@@ -97,6 +100,7 @@ func (route *Route) init() {
 
 	} else if pathArgs < handlerArgs {
 		route.inBody = handlerArgs
+		route.bodyType = route.handlerType.In(route.inBody - 1)
 	}
 
 	if route.handlerType.NumOut() > 2 {
@@ -213,6 +217,18 @@ func (route *Route) invoke(args []string, body []byte) ([]byte, *Error) {
 	}
 
 	return ret, nil
+}
+
+func (route *Route) HasBodyParam() bool {
+	return route.bodyType != nil && route.bodyType.Kind() != reflect.Invalid
+}
+
+// JsonSchema returns a json schema for the body if there is a body.
+func (route *Route) JsonSchema() string {
+	if route.bodyType != nil && route.bodyType.Kind() != reflect.Invalid {
+		return path.JsonSchema(route.bodyType)
+	}
+	return ""
 }
 
 // String returns a string represenation of the object suitable for debugging.
