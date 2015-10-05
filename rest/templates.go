@@ -48,7 +48,7 @@ documentation = `
                     <input type="button"
                         class="btn btn-warning"
                         value="{{$route.Method}}"
-                        onClick="doPut(this.form,
+                        onClick="doPut(
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
@@ -66,7 +66,7 @@ documentation = `
                     <input type="button"
                         class="btn btn-success active"
                         value="{{$route.Method}}"
-                        onClick="doPost(this.form,
+                        onClick="doPost(
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
@@ -85,7 +85,7 @@ documentation = `
                     <input type="button"
                         class="btn btn-danger active"
                         value="{{$route.Method}}"
-                        onClick="doDelete(this.form,
+                        onClick="doDelete(
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
@@ -103,7 +103,7 @@ documentation = `
                     <input type="button"
                         class="btn btn-info active"
                         value="{{$route.Method}}"
-                        onClick="doGet(this.form,
+                        onClick="doGet(
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
@@ -128,9 +128,9 @@ documentation = `
 
     function showError (result, resultDiv) {
                 console.log(result);
-                resultDiv.html("Status: " + result.status
+                resultDiv.html('<pre class="box">Status: ' + result.status
                     + "<br>Status Text: " + result.statusText
-                    + "<br>Response: " + result.responseText);
+                    + "<br>Response: " + result.responseText + "</pre>");
     }
 
     function getJsDivID (divID) {
@@ -149,7 +149,7 @@ documentation = `
             path = path.replace(formDiv[i].id, formDiv[i].value);
 
             if (formDiv[i].value == "") {
-                resultDiv.html("text box for variable '" + formDiv[i].id + "' is empty");
+                resultDiv.html('<pre class="box">text box for variable "' + formDiv[i].id + '" is empty</pre>');
                 return;
             }
         }
@@ -179,7 +179,8 @@ documentation = `
             type: 'GET',
             success: function (result) {
                 console.log(result);
-                resultDiv.html(result);
+                var js = JSON.stringify(result, null, 2);
+                resultDiv.html("<pre class=box>" + js + "</pre>");
             },
             error: function(jqXHR) {
                 showError(jqXHR, resultDiv);
@@ -187,7 +188,7 @@ documentation = `
         });
     }
 
-    function doPut(form, divID, path) {
+    function doPut(divID, path) {
         divID = getJsDivID(divID);
         resultDiv = $("div#"+divID);
         path = replaceInPath(divID, path, resultDiv);
@@ -198,7 +199,8 @@ documentation = `
             type: 'PUT',
             headers: { "Content-Type": "application/json" }, 
             success: function(result) {
-                resultDiv.html(result);
+                var js = JSON.stringify(result, null, 2);
+                resultDiv.html("<pre class=box>" + js + "</pre>");
             },
             error: function(jqXHR) {
                 showError(jqXHR, resultDiv);
@@ -206,7 +208,7 @@ documentation = `
         });
     }
 
-    function doPost(form, divID, path) {
+    function doPost(divID, path) {
         divID = getJsDivID(divID);
         resultDiv = $("div#"+divID);
         path = replaceInPath(divID, path, resultDiv);
@@ -221,7 +223,8 @@ documentation = `
             data: bod,
             headers: { "Content-Type": "application/json" }, 
             success: function(result) {
-                resultDiv.html(result);
+                var js = JSON.stringify(result, null, 2);
+                resultDiv.html("<pre class=box>" + js + "</pre>");
             },
             error: function(jqXHR) {
                 showError(jqXHR, resultDiv);
@@ -229,7 +232,7 @@ documentation = `
         });
     }
 
-    function doDelete(form, divID, path) {
+    function doDelete(divID, path) {
         divID = getJsDivID(divID);
         resultDiv = $("div#"+divID);
         path = replaceInPath(divID, path, resultDiv);
@@ -240,7 +243,8 @@ documentation = `
             type: 'DELETE',
             headers: { "Content-Type": "application/json" }, 
             success: function(result) {
-                resultDiv.html(result);
+                var js = JSON.stringify(result, null, 2);
+                resultDiv.html("<pre class=box>" + js + "</pre>");
             },
             error: function(jqXHR) {
                 showError(jqXHR, resultDiv);
