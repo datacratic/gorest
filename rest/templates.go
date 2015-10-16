@@ -78,7 +78,6 @@ documentation = `
             <div id="{{$route.Method}}-{{$route.Path}}"></div>
 
 
-
         {{ else if eq $route.Method "DELETE" }}
             <div class="bg-danger">
                 <form id="{{ printf "%s-%s" $route.Method $route.Path }}">
@@ -95,7 +94,7 @@ documentation = `
                 </form>
             </div>
             <div id="{{$route.Method}}-{{$route.Path}}"></div>
-            
+
 
         {{ else if eq $route.Method "GET"}}
             <div class="bg-info">

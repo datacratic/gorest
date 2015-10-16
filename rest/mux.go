@@ -107,7 +107,7 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 		funcMap := make(template.FuncMap)
 		funcMap["Split"] = strings.Split
 		funcMap["Contains"] = strings.Contains
-		t, err := template.New("documentation.html").Funcs(funcMap).Parse(documentation)
+		t, err := template.New("documentation").Funcs(funcMap).Parse(documentation)
 		if err != nil {
 			mux.respondError(writer, "html-template-error", http.StatusBadRequest, err)
 			return
