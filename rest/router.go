@@ -84,7 +84,7 @@ func (rt *router) route(method string, path []string, args []string) (*Route, []
 	return nil, args
 }
 
-func (rt *router) PrintRoutes(routes []*Route) []*Route {
+func (rt *router) PrintRoutes(routes Routes) Routes {
 	if rt.routes != nil {
 		for _, route := range rt.routes {
 			routes = append(routes, route)

@@ -45,7 +45,7 @@
                     <input type="button"
                         class="btn btn-warning"
                         value="{{$route.Method}}"
-                        onClick="doPut(
+                        onClick="doRequest('{{ $route.Method }}',
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
@@ -63,7 +63,7 @@
                     <input type="button"
                         class="btn btn-success active"
                         value="{{$route.Method}}"
-                        onClick="doPost(
+                        onClick="doRequest('{{ $route.Method }}',
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
@@ -73,7 +73,6 @@
                 </form>
             </div>
             <div id="{{$route.Method}}-{{$route.Path}}"></div>
-
 
 
         {{ else if eq $route.Method "DELETE" }}
@@ -82,7 +81,7 @@
                     <input type="button"
                         class="btn btn-danger active"
                         value="{{$route.Method}}"
-                        onClick="doDelete(
+                        onClick="doRequest('{{ $route.Method }}',
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
@@ -92,7 +91,7 @@
                 </form>
             </div>
             <div id="{{$route.Method}}-{{$route.Path}}"></div>
-            
+
 
         {{ else if eq $route.Method "GET"}}
             <div class="bg-info">
@@ -100,7 +99,7 @@
                     <input type="button"
                         class="btn btn-info active"
                         value="{{$route.Method}}"
-                        onClick="doGet(
+                        onClick="doRequest('{{ $route.Method }}',
                             '{{ js (printf "%s-%s" $route.Method $route.Path) }}',
                             '{{ printf "http://%s%s" $page.Host $route.Path}}'
                     )">
@@ -163,91 +162,40 @@
         }
     }
 
-    function doGet(divID, path) {
+    function doRequest(verb, divID, path) {
         divID = getJsDivID(divID);
-        resultDiv = $("div#"+divID);
-        console.log(resultDiv);
+        resultDiv = $("div#" + divID);
         path = replaceInPath(divID, path, resultDiv);
-        console.log(path);
         if (!path) { return; }
 
-        $.ajax({
+        var request = {
             url: path,
-            type: 'GET',
-            success: function (result) {
-                console.log(result);
-                var js = JSON.stringify(result, null, 2);
+            type: verb,
+            success: function(result, textStatus, jqXHR) {
+                console.log(jqXHR);
+                var js = "Status: " + jqXHR.status + "\n";
+                js += "Status Text: " + jqXHR.statusText;
+                if (result) {
+                    js += "\n\n" + JSON.stringify(result, null, 2);
+                }
                 resultDiv.html("<pre class=box>" + js + "</pre>");
             },
             error: function(jqXHR) {
                 showError(jqXHR, resultDiv);
             }
-        });
+        }
+
+        if (verb == 'POST' || verb == 'PUT') {
+            var body = getBody(divID, resultDiv);
+            request.headers = { "Content-Type": "application/json" };
+            request.data = body;
+        } else if (verb == 'DELETE') {
+            request.headers = { "Content-Type": "application/json" };
+        }
+
+        $.ajax(request);
     }
 
-    function doPut(divID, path) {
-        divID = getJsDivID(divID);
-        resultDiv = $("div#"+divID);
-        path = replaceInPath(divID, path, resultDiv);
-        if (!path) { return; }
-        
-        $.ajax({
-            url: path,
-            type: 'PUT',
-            headers: { "Content-Type": "application/json" }, 
-            success: function(result) {
-                var js = JSON.stringify(result, null, 2);
-                resultDiv.html("<pre class=box>" + js + "</pre>");
-            },
-            error: function(jqXHR) {
-                showError(jqXHR, resultDiv);
-            }
-        });
-    }
-
-    function doPost(divID, path) {
-        divID = getJsDivID(divID);
-        resultDiv = $("div#"+divID);
-        path = replaceInPath(divID, path, resultDiv);
-        if (!path) { return; }
-
-        var bod = getBody(divID, resultDiv);
-        console.log(bod)
-        
-        $.ajax({
-            url: path,
-            type: 'POST',
-            data: bod,
-            headers: { "Content-Type": "application/json" }, 
-            success: function(result) {
-                var js = JSON.stringify(result, null, 2);
-                resultDiv.html("<pre class=box>" + js + "</pre>");
-            },
-            error: function(jqXHR) {
-                showError(jqXHR, resultDiv);
-            }
-        });
-    }
-
-    function doDelete(divID, path) {
-        divID = getJsDivID(divID);
-        resultDiv = $("div#"+divID);
-        path = replaceInPath(divID, path, resultDiv);
-        if (!path) { return; }
-
-        $.ajax({
-            url: path,
-            type: 'DELETE',
-            headers: { "Content-Type": "application/json" }, 
-            success: function(result) {
-                var js = JSON.stringify(result, null, 2);
-                resultDiv.html("<pre class=box>" + js + "</pre>");
-            },
-            error: function(jqXHR) {
-                showError(jqXHR, resultDiv);
-            }
-        });
-    }
 </script>
 
 

@@ -24,6 +24,18 @@ type Routable interface {
 // Routes is convenience type that represents a list of Route objects.
 type Routes []*Route
 
+func (routes Routes) Len() int {
+	return len(routes)
+}
+
+func (routes Routes) Less(i, j int) bool {
+	return routes[i].Path.String() < routes[j].Path.String()
+}
+
+func (routes Routes) Swap(i, j int) {
+	routes[i], routes[j] = routes[j], routes[i]
+}
+
 // Route associates a handler which should be invoked for a given HTTP method
 // and templated path.
 type Route struct {

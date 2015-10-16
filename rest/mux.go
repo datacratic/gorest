@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -106,31 +107,24 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 		funcMap := make(template.FuncMap)
 		funcMap["Split"] = strings.Split
 		funcMap["Contains"] = strings.Contains
-		funcMap["JsonParam"] = func(b string) (string, error) {
-			if b == "hello" {
-				return "true", nil
-			} else {
-				return "", fmt.Errorf("not hello")
-			}
-		}
 		t, err := template.New("documentation.html").Funcs(funcMap).Parse(documentation)
 		if err != nil {
 			mux.respondError(writer, "html-template-error", http.StatusBadRequest, err)
 			return
 		}
 
-		routes := mux.router.PrintRoutes(make([]*Route, 0))
+		routes := mux.router.PrintRoutes(make(Routes, 0))
+		sort.Sort(routes)
 
 		page := struct {
 			Title  string
 			Host   string
-			Routes []*Route
+			Routes Routes
 		}{
 			"bidderd",
 			httpReq.Host,
 			routes,
 		}
-		println("host", httpReq.Host)
 		t.Execute(writer, page)
 		return
 	}
