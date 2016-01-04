@@ -327,6 +327,9 @@ func (resp *Response) GetBody(obj interface{}) (err *Error) {
 	} else if contentType := resp.Header.Get("Content-Type"); len(resp.Body) > 0 && contentType != "application/json" {
 		err = ErrorFmt(UnsupportedContentType, "unsupported content-type: '%s' != 'application/json'", contentType)
 
+	} else if obj == nil {
+		return
+
 	} else if jsonErr := json.Unmarshal(resp.Body, obj); jsonErr != nil {
 		err = &Error{UnmarshalError, jsonErr}
 	}

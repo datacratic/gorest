@@ -102,6 +102,10 @@ func ExamplePing() {
 	}
 	fmt.Println("ping-client:", tick)
 
+	if err := clientResp.GetBody(nil); err != nil {
+		panic("Whoops!")
+	}
+
 	// The REST client can check if a response timed out.
 	dialer := net.Dialer{Timeout: 500 * time.Millisecond}
 	clientTime := &rest.Client{
