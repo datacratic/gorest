@@ -4,6 +4,7 @@ package rest
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,6 +35,9 @@ type Client struct {
 	// Header is a list of HTTP requests that will be added to every requests
 	// originating from this client.
 	Header http.Header
+
+	// GzipLevel is used to compress requests to a certain level, using gzip.
+	GzipLevel int
 
 	// Limit sets a hard limit on the number of concurrent requests. If not set
 	// then no limits are imposed.
@@ -69,12 +73,13 @@ func (client *Client) NewRequest(method string) *Request {
 	}
 
 	return &Request{
-		REST:   client,
-		Client: client.Client,
-		Host:   client.Host,
-		Method: method,
-		Root:   client.Root,
-		Header: headers,
+		REST:      client,
+		Client:    client.Client,
+		Host:      client.Host,
+		Method:    method,
+		Root:      client.Root,
+		Header:    headers,
+		GzipLevel: client.GzipLevel,
 	}
 }
 
@@ -127,6 +132,9 @@ type Request struct {
 	// changed via the AddHeader method.
 	Header http.Header
 
+	// GzipLevel is used to compress requests using gzip.
+	GzipLevel int
+
 	// Body is the JSON serialized body of the HTTP request. Can be set via the
 	// SetBody method.
 	Body []byte
@@ -165,6 +173,12 @@ func (req *Request) SetPath(path string, args ...interface{}) *Request {
 	return req
 }
 
+// SetGzipLevel sets the compression level, must be called before SetBody.
+func (req *Request) SetGzipLevel(level int) *Request {
+	req.GzipLevel = level
+	return req
+}
+
 // AddParam adds a parameter to the query string.
 func (req *Request) AddParam(key, value string) *Request {
 	if req.Query == nil {
@@ -187,8 +201,21 @@ func (req *Request) AddHeader(key, value string) *Request {
 // SetBody marshals the given objects and sets it as the body of the
 // request. The Content-Length header will be automatically set.
 func (req *Request) SetBody(obj interface{}) *Request {
-	var err error
-	if req.Body, err = json.Marshal(obj); err == nil {
+	if js, err := json.Marshal(obj); err == nil {
+
+		if req.GzipLevel != 0 {
+			var body bytes.Buffer
+			gz, _ := gzip.NewWriterLevel(&body, req.GzipLevel)
+			_, err := gz.Write(js)
+			if err != nil {
+				req.err = &Error{GzipError, err}
+			}
+			gz.Close()
+			req.Body = body.Bytes()
+			req.AddHeader("Content-Encoding", "gzip")
+		} else {
+			req.Body = js
+		}
 		req.AddHeader("Content-Length", strconv.Itoa(len(req.Body)))
 
 	} else {
