@@ -47,6 +47,10 @@ const (
 	// body of an HTTP response.
 	UnmarshalError = "unmarshal-error"
 
+	// GzipError indicates that an error occured while compressing the
+	// body of an HTTP response into gzip.
+	GzipError = "gzip-error"
+
 	// MarshalError indicates that an error occured while serializing the body
 	// of an HTTP request.
 	MarshalError = "marshal-error"
