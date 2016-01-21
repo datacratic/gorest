@@ -3,7 +3,6 @@
 package rest
 
 import (
-	"compress/gzip"
 	"fmt"
 	"net/http/httptest"
 	"sync"
@@ -40,7 +39,6 @@ func (service *TestService) RESTRoutes() Routes {
 		NewRoute("/map/:key", "GET", service.Get),
 		NewRoute("/map/:key", "PUT", service.Put),
 		NewRoute("/map/:key", "DELETE", service.Del),
-		NewRouteGzip("/map/gzip/:key", "GET", service.Get, gzip.BestSpeed),
 	}
 }
 
@@ -211,8 +209,5 @@ func TestMuxSimple(t *testing.T) {
 
 	handler.Wait(2)
 	handler.Expect(t, "r2x", KV{"a", "1"})
-
-	r30 := client.NewRequest("GET").SetPath("/gzip/%s", "a").Send()
-	checkRespBody(t, "g(a)", r30, &KV{"a", "1"})
 
 }

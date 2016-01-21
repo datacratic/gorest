@@ -62,9 +62,6 @@ type Route struct {
 	// called.
 	Handler interface{}
 
-	// GzipLevel is used to set the response gzip compression level.
-	GzipLevel int
-
 	initialize sync.Once
 
 	handler     reflect.Value
@@ -83,19 +80,6 @@ func NewRoute(path, method string, handler interface{}) *Route {
 		Path:    NewPath(path),
 		Method:  method,
 		Handler: handler,
-	}
-	route.Init()
-	return route
-}
-
-// NewRouteGzip creates and initializea a new Route from the method, path and
-// handler. And will gzip compress the returned value.
-func NewRouteGzip(path, method string, handler interface{}, level int) *Route {
-	route := &Route{
-		Path:      NewPath(path),
-		Method:    method,
-		Handler:   handler,
-		GzipLevel: level,
 	}
 	route.Init()
 	return route

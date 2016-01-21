@@ -3,8 +3,6 @@
 package rest
 
 import (
-	"bytes"
-	"compress/gzip"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -145,28 +143,10 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 		}
 	}
 
-	var body []byte
-	if contentEncoding := httpReq.Header.Get("Content-Encoding"); contentEncoding == "gzip" {
-		gz, err := gzip.NewReader(httpReq.Body)
-		defer gz.Close()
-		if err != nil {
-			err := fmt.Errorf("decoding gzip content failed: %s", err)
-			mux.respondError(writer, GzipError, http.StatusBadRequest, err)
-			return
-		}
-		body, err = ioutil.ReadAll(gz)
-		if err != nil {
-			err := fmt.Errorf("decoding gzip content failed: %s", err)
-			mux.respondError(writer, GzipError, http.StatusBadRequest, err)
-			return
-		}
-	} else {
-		var err error
-		body, err = ioutil.ReadAll(httpReq.Body)
-		if err != nil {
-			mux.respondError(writer, ReadBodyError, http.StatusBadRequest, err)
-			return
-		}
+	body, err := ioutil.ReadAll(httpReq.Body)
+	if err != nil {
+		mux.respondError(writer, ReadBodyError, http.StatusBadRequest, err)
+		return
 	}
 
 	resp, restError := route.invoke(args, body)
@@ -179,21 +159,6 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 		writer.WriteHeader(http.StatusNoContent)
 	} else {
 		header := writer.Header()
-
-		if route.GzipLevel != 0 {
-			var body bytes.Buffer
-			gz, _ := gzip.NewWriterLevel(&body, route.GzipLevel)
-			_, err := gz.Write(resp)
-			if err != nil {
-				err := fmt.Errorf("decoding gzip content failed: %s", err)
-				mux.respondError(writer, GzipError, http.StatusBadRequest, err)
-				return
-			}
-			gz.Close()
-			resp = body.Bytes()
-			header.Set("Content-Encoding", "gzip")
-		}
-
 		header.Set("Content-Type", "application/json")
 		header.Set("Content-Length", strconv.FormatInt(int64(len(resp)), 10))
 		writer.Write(resp)
