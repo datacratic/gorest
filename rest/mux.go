@@ -119,11 +119,9 @@ func (mux *Mux) ServeHTTP(writer http.ResponseWriter, httpReq *http.Request) {
 		sort.Sort(routes)
 
 		page := struct {
-			Title  string
 			Host   string
 			Routes Routes
 		}{
-			"bidderd",
 			httpReq.Host,
 			routes,
 		}

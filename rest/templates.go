@@ -36,7 +36,7 @@ documentation = `
 {{$page := .}}
 
 <div class="text-center">
-    <h1> {{.Title}} REST API on {{$page.Host}}</h1>
+    <h1>REST API on {{$page.Host}}</h1>
 </div>
 
 <div class="container">
